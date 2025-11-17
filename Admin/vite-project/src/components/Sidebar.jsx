@@ -36,6 +36,9 @@ const Sidebar = () => {
           <li>
             <Link to="/categories">📑 Categories</Link>
           </li>
+          <li>
+            <Link to="/contact">💬 Quản Lý Liên Hệ</Link>
+          </li>
         </ul>
       </nav>
 

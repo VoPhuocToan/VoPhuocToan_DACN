@@ -8,6 +8,8 @@ import Dashboard from './pages/Dashboard'
 import ProductList from './pages/ProductList'
 import ProductForm from './pages/ProductForm'
 import Categories from './pages/Categories'
+import ContactList from './pages/ContactList'
+import ContactDetail from './pages/ContactDetail'
 import './styles/index.css'
 
 function App() {
@@ -23,6 +25,8 @@ function App() {
             <Route path='products/new' element={<ProductForm />} />
             <Route path='products/:id' element={<ProductForm />} />
             <Route path='categories' element={<Categories />} />
+            <Route path='contact' element={<ContactList />} />
+            <Route path='contact/:id' element={<ContactDetail />} />
           </Route>
 
           <Route path='*' element={<Navigate to='/' replace />} />
