@@ -1,12 +1,14 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+import bgImage from '../assets/bg1.jpg'
 import './Home.css'
 
 const Home = () => {
   return (
     <div className='home'>
       {/* Banner */}
-      <section className='banner'>
+      <section className='banner' style={{ backgroundImage: `url(${bgImage})` }}>
+        <div className='banner-overlay'></div>
         <div className='banner-content'>
           <h1>Thực phẩm chức năng chính hãng</h1>
           <p>Chăm sóc sức khỏe toàn diện với sản phẩm chất lượng cao</p>
