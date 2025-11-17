@@ -1,0 +1,12 @@
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #fafafa;
+}
+
+.app-main {
+  flex: 1;
+  width: 100%;
+  padding-top: 70px; /* Để dành chỗ cho Navbar fixed */
+}

@@ -1,0 +1,6 @@
+export { default as AdminRoute } from './AdminRoute'
+export { default as AdminLayout } from './AdminLayout'
+export { default as AdminDashboard } from './AdminDashboard'
+export { default as AdminProductList } from './AdminProductList'
+export { default as AdminProductForm } from './AdminProductForm'
+export { default as AdminCategoryList } from './AdminCategoryList'

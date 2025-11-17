@@ -1,0 +1,173 @@
+import React, { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import './admin.css'
+
+const AdminCategoryList = () => {
+  const [categories, setCategories] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [showForm, setShowForm] = useState(false)
+  const [newCategory, setNewCategory] = useState({
+    name: '',
+    description: '',
+    icon: ''
+  })
+
+  const fetchCategories = async () => {
+    setLoading(true)
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+      const res = await fetch(`${apiUrl}/api/categories`)
+      const data = await res.json()
+      if (data.success) setCategories(data.data)
+      else setError(data.message || 'Lỗi khi lấy danh mục')
+    } catch (err) {
+      console.error(err)
+      setError('Không thể kết nối tới server')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchCategories()
+  }, [])
+
+  const handleAddCategory = async (e) => {
+    e.preventDefault()
+    if (!newCategory.name.trim()) {
+      alert('Vui lòng nhập tên danh mục')
+      return
+    }
+
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+      const token = localStorage.getItem('token')
+      const res = await fetch(`${apiUrl}/api/categories`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(newCategory)
+      })
+      const data = await res.json()
+      if (data.success) {
+        fetchCategories()
+        setNewCategory({ name: '', description: '', icon: '' })
+        setShowForm(false)
+      } else {
+        alert(data.message || 'Thêm danh mục thất bại')
+      }
+    } catch (err) {
+      console.error(err)
+      alert('Lỗi khi thêm danh mục')
+    }
+  }
+
+  const handleDeleteCategory = async (id) => {
+    if (!window.confirm('Bạn có chắc muốn xóa danh mục này?')) return
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+      const token = localStorage.getItem('token')
+      const res = await fetch(`${apiUrl}/api/categories/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      })
+      const data = await res.json()
+      if (data.success) {
+        fetchCategories()
+      } else {
+        alert(data.message || 'Xóa thất bại')
+      }
+    } catch (err) {
+      console.error(err)
+      alert('Lỗi khi xóa danh mục')
+    }
+  }
+
+  return (
+    <div>
+      <div className='admin-header'>
+        <h1>Quản lý danh mục</h1>
+        <button className='btn' onClick={() => setShowForm(!showForm)}>
+          {showForm ? 'Hủy' : 'Thêm danh mục'}
+        </button>
+      </div>
+
+      {showForm && (
+        <div className='form-card'>
+          <h3>Thêm danh mục mới</h3>
+          <form onSubmit={handleAddCategory}>
+            <div className='form-group'>
+              <label>Tên danh mục</label>
+              <input
+                type='text'
+                value={newCategory.name}
+                onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
+                placeholder='Nhập tên danh mục'
+                required
+              />
+            </div>
+            <div className='form-group'>
+              <label>Mô tả</label>
+              <textarea
+                value={newCategory.description}
+                onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
+                placeholder='Nhập mô tả danh mục'
+                rows={3}
+              />
+            </div>
+            <div className='form-group'>
+              <label>Icon (emoji)</label>
+              <input
+                type='text'
+                value={newCategory.icon}
+                onChange={(e) => setNewCategory({ ...newCategory, icon: e.target.value })}
+                placeholder='Ví dụ: 💊 📦'
+                maxLength={2}
+              />
+            </div>
+            <button type='submit' className='btn'>Thêm</button>
+          </form>
+        </div>
+      )}
+
+      {loading ? (
+        <p>Đang tải...</p>
+      ) : error ? (
+        <p className='error'>{error}</p>
+      ) : (
+        <table className='admin-table'>
+          <thead>
+            <tr>
+              <th>Icon</th>
+              <th>Tên</th>
+              <th>Mô tả</th>
+              <th>Hành động</th>
+            </tr>
+          </thead>
+          <tbody>
+            {categories.map(cat => (
+              <tr key={cat._id}>
+                <td>{cat.icon}</td>
+                <td>{cat.name}</td>
+                <td>{cat.description}</td>
+                <td>
+                  <button className='btn small danger' onClick={() => handleDeleteCategory(cat._id)}>
+                    Xóa
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  )
+}
+
+export default AdminCategoryList
