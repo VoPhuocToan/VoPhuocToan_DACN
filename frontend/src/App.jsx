@@ -11,6 +11,7 @@ import Contact from './pages/Contact'
 import Cart from './pages/Cart'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import SearchResults from './pages/SearchResults'
 import './App.css'
 import { AdminRoute, AdminLayout, AdminDashboard, AdminProductList, AdminProductForm, AdminCategoryList } from './admin'
 
@@ -39,6 +40,7 @@ const App = () => {
               <Route path='/' element={<Home />} />
               <Route path='/thuc-pham-chuc-nang' element={<FunctionalFoods />} />
               <Route path='/thuc-pham-chuc-nang/:id' element={<ProductDetail />} />
+              <Route path='/tim-kiem' element={<SearchResults />} />
               <Route path='/lien-he' element={<Contact />} />
               <Route path='/gio-hang' element={<Cart />} />
               <Route path='/dang-nhap' element={<Login />} />

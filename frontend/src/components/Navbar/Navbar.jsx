@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import logoImage from '../../assets/logo.jpg'
 import './Navbar.css'
@@ -8,12 +8,13 @@ const Navbar = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [showUserMenu, setShowUserMenu] = useState(false)
   const { user, isAuthenticated, logout } = useAuth()
+  const navigate = useNavigate()
 
   const handleSearch = (e) => {
     e.preventDefault()
     if (searchQuery.trim()) {
-      // TODO: Implement search functionality
-      console.log('Searching for:', searchQuery)
+      navigate(`/tim-kiem?q=${encodeURIComponent(searchQuery)}`)
+      setSearchQuery('')
     }
   }
 
