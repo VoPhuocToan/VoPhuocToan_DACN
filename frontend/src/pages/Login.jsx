@@ -90,6 +90,12 @@ const Login = () => {
     }
   }
 
+  const handleSocialLogin = (provider) => {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+    // Redirect browser to backend OAuth endpoint which will redirect back with token
+    window.location.href = `${apiUrl}/api/auth/${provider}`
+  }
+
   return (
     <div className='login-page'>
       <div className='login-container'>
@@ -183,13 +189,9 @@ const Login = () => {
           </div>
 
           <div className='social-login'>
-            <button className='social-btn google' disabled={isLoading}>
+            <button className='social-btn google-full' disabled={isLoading} onClick={() => handleSocialLogin('google')}>
               <i className='fi fi-brands-google'></i>
-              Google
-            </button>
-            <button className='social-btn facebook' disabled={isLoading}>
-              <i className='fi fi-brands-facebook'></i>
-              Facebook
+              Đăng nhập với Google
             </button>
           </div>
 

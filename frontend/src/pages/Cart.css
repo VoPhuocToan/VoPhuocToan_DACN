@@ -1,14 +1,15 @@
 .cart-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f5f5 0%, #e8f5e9 100%);
+  background: linear-gradient(135deg, #f5f8fb 0%, var(--color-primary-light) 100%);
   padding-bottom: 60px;
 }
 
 .cart-header {
-  background: linear-gradient(135deg, #1a472a 0%, #2d5f3f 100%);
+  background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary) 100%);
   color: white;
   padding: 40px 20px;
   text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 86, 210, 0.3);
 }
 
 .cart-header h1 {
@@ -40,13 +41,13 @@
 
 .empty-icon {
   font-size: 80px;
-  color: #4ade80;
+  color: var(--color-primary);
   margin-bottom: 20px;
 }
 
 .empty-cart h2 {
   font-size: 28px;
-  color: #1a472a;
+  color: var(--color-primary-dark);
   margin: 0 0 10px 0;
 }
 
@@ -61,7 +62,7 @@
   align-items: center;
   gap: 10px;
   padding: 12px 30px;
-  background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
   color: white;
   text-decoration: none;
   border-radius: 8px;
@@ -71,7 +72,7 @@
 
 .continue-shopping-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(74, 222, 128, 0.3);
+  box-shadow: 0 8px 20px rgba(0, 86, 210, 0.3);
 }
 
 /* Cart Content */
@@ -143,7 +144,7 @@
 
 .cart-item:hover {
   background: #f5f5f5;
-  border-color: #4ade80;
+  border-color: var(--color-primary);
 }
 
 .item-image {
@@ -170,7 +171,7 @@
 .item-name {
   font-size: 16px;
   font-weight: 600;
-  color: #1a472a;
+  color: var(--color-primary-dark);
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -179,7 +180,7 @@
 
 .item-price {
   font-size: 14px;
-  color: #4ade80;
+  color: var(--color-primary);
   font-weight: 600;
   margin: 0;
 }
@@ -205,14 +206,14 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: #4ade80;
+  color: var(--color-primary);
   font-size: 16px;
   transition: all 0.3s ease;
 }
 
 .qty-btn:hover {
   background: #f0f0f0;
-  color: #22c55e;
+  color: var(--color-primary-dark);
 }
 
 .item-quantity input {
@@ -234,7 +235,7 @@
 /* Item Total */
 .item-total {
   font-weight: 700;
-  color: #1a472a;
+  color: var(--color-primary-dark);
   font-size: 16px;
   text-align: right;
 }
@@ -294,11 +295,11 @@
 }
 
 .shipping-fee {
-  color: #4ade80;
+  color: var(--color-primary);
 }
 
 .discount {
-  color: #4ade80;
+  color: var(--color-primary);
 }
 
 .summary-divider {
@@ -310,19 +311,19 @@
 .summary-row.total {
   font-size: 18px;
   font-weight: 700;
-  color: #1a472a;
+  color: var(--color-primary-dark);
   margin-top: 10px;
 }
 
 .summary-row.total span:last-child {
-  color: #4ade80;
+  color: var(--color-primary);
 }
 
 .checkout-btn {
   width: 100%;
   padding: 14px;
   margin-top: 20px;
-  background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
   color: white;
   border: none;
   border-radius: 8px;
@@ -338,7 +339,7 @@
 
 .checkout-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(74, 222, 128, 0.3);
+  box-shadow: 0 8px 20px rgba(0, 86, 210, 0.3);
 }
 
 .continue-btn {
@@ -381,7 +382,7 @@
 }
 
 .benefits i {
-  color: #4ade80;
+  color: var(--color-primary);
   font-size: 14px;
 }
 

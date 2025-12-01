@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Search</title>
+</head>
+<body>
+    <h1>Test Search Navigation</h1>
+    <form id="searchForm">
+        <input type="text" id="searchInput" placeholder="Enter search term" />
+        <button type="submit">Search</button>
+    </form>
+    
+    <div id="result"></div>
+    
+    <script>
+        document.getElementById('searchForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const query = document.getElementById('searchInput').value;
+            const url = `/tim-kiem?q=${encodeURIComponent(query)}`;
+            document.getElementById('result').innerHTML = `
+                <p>Query: ${query}</p>
+                <p>URL: ${url}</p>
+                <p>Would navigate to: <a href="${url}">${url}</a></p>
+            `;
+        });
+    </script>
+</body>
+</html>

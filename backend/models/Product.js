@@ -30,16 +30,6 @@ const productSchema = new mongoose.Schema({
   category: {
     type: String,
     required: [true, 'Vui lòng chọn danh mục'],
-    enum: [
-      'Vitamin & Khoáng chất',
-      'Sinh lý - Nội tiết tố',
-      'Cải thiện tăng cường chức năng',
-      'Hỗ trợ điều trị',
-      'Hỗ trợ tiêu hóa',
-      'Thần kinh não',
-      'Hỗ trợ làm đẹp',
-      'Sức khỏe tim mạch'
-    ],
     index: true
   },
   description: {

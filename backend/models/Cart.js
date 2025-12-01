@@ -12,7 +12,11 @@ const cartSchema = new mongoose.Schema(
         productId: {
           type: mongoose.Schema.Types.ObjectId,
           ref: 'Product',
-          required: true
+          // optional: may be null for client-side mock products
+        },
+        clientProductId: {
+          type: String,
+          default: null
         },
         name: String,
         price: Number,

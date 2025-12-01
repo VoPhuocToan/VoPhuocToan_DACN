@@ -6,10 +6,29 @@ export const StoreProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('adminToken') || null);
   const [isAuthenticated, setIsAuthenticated] = useState(!!token);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const API_URL = 'http://localhost:5000/api';
+
+  // Initialize user and token from localStorage on mount
+  useEffect(() => {
+    const savedToken = localStorage.getItem('adminToken');
+    const savedUser = localStorage.getItem('adminUser');
+    
+    if (savedToken && savedUser) {
+      try {
+        setToken(savedToken);
+        setUser(JSON.parse(savedUser));
+        setIsAuthenticated(true);
+      } catch (err) {
+        console.error('[DEBUG] Error loading saved user:', err);
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
+      }
+    }
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
     if (token) {
@@ -20,6 +39,14 @@ export const StoreProvider = ({ children }) => {
       localStorage.removeItem('adminToken');
     }
   }, [token]);
+
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem('adminUser', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('adminUser');
+    }
+  }, [user]);
 
   const login = async (email, password) => {
     setLoading(true);
@@ -47,15 +74,29 @@ export const StoreProvider = ({ children }) => {
       const data = await response.json();
       console.log('[DEBUG] Login response:', data);
 
-      if (data.token) {
-        setToken(data.token);
-        setUser(data.user);
-        setIsAuthenticated(true);
-        localStorage.setItem('adminToken', data.token);
-        return { success: true, data };
-      } else {
+      // Backend returns { success: true, data: { _id, name, email, role, token } }
+      if (!data.success || !data.data) {
+        throw new Error(data.message || 'Login failed');
+      }
+
+      const { token, ...userData } = data.data;
+      
+      if (!token) {
         throw new Error('No token received from server');
       }
+
+      // Check if user is admin
+      if (userData.role !== 'admin') {
+        throw new Error('Chỉ admin mới có thể đăng nhập vào trang quản trị');
+      }
+
+      setToken(token);
+      setUser(userData);
+      setIsAuthenticated(true);
+      localStorage.setItem('adminToken', token);
+      localStorage.setItem('adminUser', JSON.stringify(userData));
+      console.log('[DEBUG] Login successful, user:', userData);
+      return { success: true, data };
     } catch (err) {
       console.error('[DEBUG] Login error:', err.message);
       setError(err.message);

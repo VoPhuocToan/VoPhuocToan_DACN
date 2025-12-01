@@ -83,13 +83,13 @@
 
 .category-filter:hover {
   background-color: #f0f0f0;
-  border-color: #00a859;
+  border-color: var(--color-primary);
 }
 
 .category-filter.active {
-  background-color: #00a859;
+  background-color: var(--color-primary);
   color: white;
-  border-color: #00a859;
+  border-color: var(--color-primary);
 }
 
 .price-filters {
@@ -111,7 +111,7 @@
   width: 18px;
   height: 18px;
   cursor: pointer;
-  accent-color: #00a859;
+  accent-color: var(--color-primary);
 }
 
 .products-content {
@@ -160,7 +160,7 @@
 
 .sort-controls select:focus {
   outline: none;
-  border-color: #00a859;
+  border-color: var(--color-primary);
 }
 
 .products-grid {

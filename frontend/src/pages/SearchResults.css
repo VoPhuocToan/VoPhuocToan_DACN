@@ -9,7 +9,7 @@
 
 /* Header */
 .search-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
   color: white;
   padding: 40px 20px;
   margin-bottom: 30px;
@@ -139,9 +139,9 @@
 }
 
 .category-filter.active {
-  background: #667eea;
+  background: var(--color-primary);
   color: white;
-  border-color: #667eea;
+  border-color: var(--color-primary);
 }
 
 .category-count {
@@ -172,8 +172,8 @@
 
 .quick-filter-btn:hover {
   background: #fff;
-  border-color: #667eea;
-  color: #667eea;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 /* Main Content */
@@ -205,7 +205,7 @@
 .count-number {
   font-size: 28px;
   font-weight: bold;
-  color: #667eea;
+  color: var(--color-primary);
 }
 
 .count-text {
@@ -303,7 +303,7 @@
 
 .btn-browse {
   padding: 12px 30px;
-  background: #667eea;
+  background: var(--color-primary);
   color: white;
   border: none;
   border-radius: 8px;
@@ -314,9 +314,9 @@
 }
 
 .btn-browse:hover {
-  background: #5568d3;
+  background: var(--color-primary-dark);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 12px rgba(11, 111, 191, 0.28);
 }
 
 /* ============================================

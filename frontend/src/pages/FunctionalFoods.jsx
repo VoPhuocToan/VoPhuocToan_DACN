@@ -1,18 +1,59 @@
 import React, { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard/ProductCard'
-import { products, categories } from '../data/products'
+import { categories } from '../data/products'
 import './FunctionalFoods.css'
 
 const FunctionalFoods = () => {
   const [searchParams, setSearchParams] = useSearchParams()
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'Tất cả')
-  const [filteredProducts, setFilteredProducts] = useState(products)
+  const [allProducts, setAllProducts] = useState([])
+  const [filteredProducts, setFilteredProducts] = useState([])
   const [sortBy, setSortBy] = useState('default')
   const [priceRange, setPriceRange] = useState('all')
 
+  // Fetch products from backend API
   useEffect(() => {
-    let filtered = products
+    const fetchProducts = async () => {
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+        const res = await fetch(`${apiUrl}/api/products?pageSize=1000`)
+        const data = await res.json()
+        
+        // API trả về { success, data: [...] }
+        const list = Array.isArray(data?.data) ? data.data : 
+                     Array.isArray(data?.products) ? data.products : 
+                     Array.isArray(data) ? data : []
+        
+        console.log('Fetched products:', list.length)
+        
+        // Normalize to match ProductCard expectations
+        const normalized = list.map(p => ({
+          id: p._id || p.id,
+          name: p.name,
+          brand: p.brand,
+          price: p.price,
+          originalPrice: p.originalPrice,
+          image: p.image || (Array.isArray(p.images) ? p.images[0] : ''),
+          category: p.category,
+          description: p.description,
+          ingredients: p.ingredients,
+          usage: p.usage,
+          rating: typeof p.rating === 'number' ? p.rating : 0,
+          reviews: typeof p.numReviews === 'number' ? p.numReviews : 0,
+          inStock: p.inStock !== false
+        }))
+        setAllProducts(normalized)
+      } catch (e) {
+        console.error('Fetch products error:', e)
+        setAllProducts([])
+      }
+    }
+    fetchProducts()
+  }, [])
+
+  useEffect(() => {
+    let filtered = allProducts
 
     // Lọc theo danh mục
     if (selectedCategory && selectedCategory !== 'Tất cả') {
@@ -40,7 +81,7 @@ const FunctionalFoods = () => {
     })
 
     setFilteredProducts(sorted)
-  }, [selectedCategory, sortBy, priceRange])
+  }, [selectedCategory, sortBy, priceRange, allProducts])
 
   const handleCategoryChange = (category) => {
     setSelectedCategory(category)

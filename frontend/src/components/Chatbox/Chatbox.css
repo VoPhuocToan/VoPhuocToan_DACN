@@ -10,12 +10,12 @@
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #00a859 0%, #007a43 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
   border: none;
   color: white;
   font-size: 1.5rem;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 168, 89, 0.4);
+  box-shadow: 0 4px 12px rgba(11, 111, 191, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -26,7 +26,7 @@
 
 .chatbox-toggle-btn:hover {
   transform: scale(1.1);
-  box-shadow: 0 6px 16px rgba(0, 168, 89, 0.5);
+  box-shadow: 0 6px 16px rgba(11, 111, 191, 0.4);
 }
 
 .chatbox-badge {
@@ -68,7 +68,7 @@
 
 /* Header */
 .chatbox-header {
-  background: linear-gradient(135deg, #00a859 0%, #007a43 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
   color: white;
   padding: 1rem 1.2rem;
   display: flex;
@@ -183,7 +183,7 @@
 }
 
 .user-message .message-content {
-  background: linear-gradient(135deg, #00a859 0%, #007a43 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
   color: white;
   border-bottom-right-radius: 4px;
 }
@@ -250,7 +250,7 @@
 }
 
 .chatbox-input:focus {
-  border-color: #00a859;
+  border-color: var(--color-primary);
 }
 
 .chatbox-input:disabled {
@@ -262,7 +262,7 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #00a859 0%, #007a43 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
   border: none;
   color: white;
   cursor: pointer;
@@ -276,7 +276,7 @@
 
 .chatbox-send-btn:hover:not(:disabled) {
   transform: scale(1.05);
-  box-shadow: 0 4px 8px rgba(0, 168, 89, 0.3);
+  box-shadow: 0 4px 8px rgba(11, 111, 191, 0.28);
 }
 
 .chatbox-send-btn:disabled {

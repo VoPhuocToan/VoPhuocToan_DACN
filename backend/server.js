@@ -1,8 +1,9 @@
+// Environment variables are preloaded by start.js
 import express from 'express'
 import mongoose from 'mongoose'
-import dotenv from 'dotenv'
 import cors from 'cors'
 import errorHandler from './middleware/errorHandler.js'
+import passport from './config/passport.js'
 
 // Import Routes
 import productRoutes from './routes/products.js'
@@ -14,16 +15,10 @@ import categoryRoutes from './routes/categories.js'
 import cartRoutes from './routes/cart.js'
 import contactRoutes from './routes/contact.js'
 
-// Load environment variables
-dotenv.config()
-
 // Connect to MongoDB (use connection string from .env)
 const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/healthycare'
 
-mongoose.connect(MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
+mongoose.connect(MONGO_URI)
   .then((conn) => {
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`)
     console.log(`📊 Database: ${conn.connection.name}`)
@@ -37,14 +32,40 @@ const app = express()
 const PORT = process.env.PORT || 5000
 
 // Middleware
+const allowedOrigins = [
+  process.env.FRONTEND_URL || 'http://localhost:5174',
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:5175', // Admin app
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:5174',
+  'http://127.0.0.1:5175'
+]
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }))
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
+
+// Serve static files (uploaded images)
+import { fileURLToPath } from 'url'
+import path from 'path'
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')))
+
+// Initialize passport (for social login)
+app.use(passport.initialize())
 
 // Routes
 app.get('/', (req, res) => {

@@ -25,6 +25,36 @@ export const AuthProvider = ({ children }) => {
     setIsLoading(false)
   }, [])
 
+  // Auto logout after 30 seconds of inactivity
+  useEffect(() => {
+    if (!token) return
+
+    let timeoutId
+
+    const resetTimer = () => {
+      if (timeoutId) clearTimeout(timeoutId)
+      timeoutId = setTimeout(() => {
+        logout()
+        alert('Phiên đăng nhập đã hết hạn do không hoạt động')
+        window.location.href = '/login'
+      }, 30000) // 30 seconds
+    }
+
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click']
+    events.forEach(event => {
+      document.addEventListener(event, resetTimer, true)
+    })
+
+    resetTimer() // Start timer
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId)
+      events.forEach(event => {
+        document.removeEventListener(event, resetTimer, true)
+      })
+    }
+  }, [token])
+
   // Listen for login events
   useEffect(() => {
     const handleLogin = () => {

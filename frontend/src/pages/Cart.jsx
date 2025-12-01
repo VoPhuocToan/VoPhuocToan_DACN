@@ -1,8 +1,40 @@
 import React, { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import './Cart.css'
 
+// Import all images from assets folder
+const images = import.meta.glob('../assets/*.{jpg,jpeg,png,gif,webp}', { eager: true, import: 'default' })
+
+const resolveImageSrc = (img) => {
+  if (!img) return ''
+  const imgStr = String(img)
+  
+  // If it's already a full URL, return it
+  if (imgStr.startsWith('http://') || imgStr.startsWith('https://')) {
+    return imgStr
+  }
+  
+  // If it's a server upload path (starts with /uploads), prepend API URL
+  if (imgStr.startsWith('/uploads')) {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+    return `${apiUrl}${imgStr}`
+  }
+  
+  // Look for the image in our imported images
+  const imagePath = `../assets/${imgStr}`
+  if (images[imagePath]) {
+    return images[imagePath]
+  }
+  
+  // If not found, return a placeholder or the original string
+  console.warn(`Image not found: ${imgStr}`)
+  return imgStr
+}
+
 const Cart = () => {
+  const navigate = useNavigate()
+  const { isAuthenticated } = useAuth()
   const [cartItems, setCartItems] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [userId] = useState(localStorage.getItem('userId') || `guest_${Date.now()}`)
@@ -35,7 +67,7 @@ const Cart = () => {
     }
   }
 
-  const updateQuantity = async (productId, newQuantity) => {
+  const updateQuantity = async (productId, newQuantity, clientProductId = null) => {
     if (newQuantity <= 0) {
       removeItem(productId)
       return
@@ -52,7 +84,8 @@ const Cart = () => {
         },
         body: JSON.stringify({
           userId: userIdToUse,
-          productId,
+          productId: (typeof productId === 'object' && productId?._id) ? productId._id : (typeof productId === 'string' ? productId : undefined),
+          clientProductId: clientProductId || (typeof productId === 'string' ? productId : null),
           quantity: newQuantity
         })
       })
@@ -66,7 +99,7 @@ const Cart = () => {
     }
   }
 
-  const removeItem = async (productId) => {
+  const removeItem = async (productId, clientProductId = null) => {
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
       const userIdToUse = localStorage.getItem('userId') || userId
@@ -78,7 +111,8 @@ const Cart = () => {
         },
         body: JSON.stringify({
           userId: userIdToUse,
-          productId
+          productId: (typeof productId === 'object' && productId?._id) ? productId._id : (typeof productId === 'string' ? productId : undefined),
+          clientProductId: clientProductId || (typeof productId === 'string' ? productId : null)
         })
       })
 
@@ -115,6 +149,18 @@ const Cart = () => {
     } catch (error) {
       console.error('Error clearing cart:', error)
     }
+  }
+
+  const handleCheckout = () => {
+    // Kiểm tra đăng nhập
+    if (!isAuthenticated) {
+      alert('Vui lòng đăng nhập để tiến hành thanh toán')
+      navigate('/login')
+      return
+    }
+    
+    // Thực hiện thanh toán
+    alert('Chức năng thanh toán đang được phát triển')
   }
 
   const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
@@ -156,9 +202,9 @@ const Cart = () => {
 
                 <div className='items-list'>
                   {cartItems.map(item => (
-                    <div key={item.productId} className='cart-item'>
+                    <div key={item._id || item.clientProductId || item.productId} className='cart-item'>
                       <div className='item-image'>
-                        <img src={item.image} alt={item.name} />
+                        <img src={resolveImageSrc(item.image)} alt={item.name} />
                       </div>
 
                       <div className='item-details'>
@@ -168,7 +214,7 @@ const Cart = () => {
 
                       <div className='item-quantity'>
                         <button 
-                          onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                          onClick={() => updateQuantity(item.productId, item.quantity - 1, item.clientProductId)}
                           className='qty-btn'
                         >
                           <i className='fi fi-rr-minus'></i>
@@ -176,11 +222,11 @@ const Cart = () => {
                         <input 
                           type='number' 
                           value={item.quantity}
-                          onChange={(e) => updateQuantity(item.productId, parseInt(e.target.value) || 1)}
+                          onChange={(e) => updateQuantity(item.productId, parseInt(e.target.value) || 1, item.clientProductId)}
                           min='1'
                         />
                         <button 
-                          onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                          onClick={() => updateQuantity(item.productId, item.quantity + 1, item.clientProductId)}
                           className='qty-btn'
                         >
                           <i className='fi fi-rr-plus'></i>
@@ -192,7 +238,7 @@ const Cart = () => {
                       </div>
 
                       <button 
-                        onClick={() => removeItem(item.productId)}
+                        onClick={() => removeItem(item.productId, item.clientProductId)}
                         className='remove-btn'
                         title='Xóa sản phẩm'
                       >
@@ -233,7 +279,7 @@ const Cart = () => {
                   </span>
                 </div>
 
-                <button className='checkout-btn'>
+                <button className='checkout-btn' onClick={handleCheckout}>
                   <i className='fi fi-rr-credit-card'></i>
                   Tiến hành thanh toán
                 </button>

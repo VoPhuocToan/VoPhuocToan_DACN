@@ -3,7 +3,7 @@ export const products = [
   {
     id: 1,
     name: 'Viên uống bổ sung Vitamin D3 + K2',
-    brand: 'Nature\'s Way',
+    brand: "Nature's Way",
     price: 350000,
     originalPrice: 420000,
     image: 'https://via.placeholder.com/300x300?text=Vitamin+D3+K2',
@@ -83,7 +83,7 @@ export const products = [
   {
     id: 6,
     name: 'Glucosamine + Chondroitin + MSM',
-    brand: 'Doctor\'s Best',
+    brand: "Doctor's Best",
     price: 520000,
     originalPrice: 600000,
     image: 'https://via.placeholder.com/300x300?text=Glucosamine',
@@ -141,4 +141,47 @@ export const categories = [
   'Hỗ trợ làm đẹp',
   'Sức khỏe tim mạch'
 ]
+
+// Danh mục con cho từng danh mục chính
+export const subCategories = {
+  'Vitamin & Khoáng chất': [
+    'Bổ sung canxi & vitamin D',
+    'Vitamin tổng hợp',
+    'Dầu cá, Omega'
+  ],
+  'Sinh lý - Nội tiết tố': [
+    'Sinh lý Nam',
+    'Sinh lý Nữ',
+    'Sức khỏe tình dục',
+    'Cân bằng nội tiết tố'
+  ],
+  'Cải thiện tăng cường chức năng': [
+    'Chức năng gan',
+    'Bổ mắt, bảo vệ mắt'
+  ],
+  'Hỗ trợ điều trị': [
+    'Cơ xương khớp',
+    'Hô hấp, ho, xoang',
+    'Hỗ trợ điều trị ung thư'
+  ],
+  'Hỗ trợ tiêu hóa': [
+    'Dạ dày, tá tràng',
+    'Táo bón',
+    'Khó tiêu',
+    'Đại tràng'
+  ],
+  'Thần kinh não': [
+    'Bổ não – cải thiện trí nhớ',
+    'Tuần hoàn máu',
+    'Hoạt huyết'
+  ],
+  'Hỗ trợ làm đẹp': [
+    'Da',
+    'Tóc'
+  ],
+  'Sức khỏe tim mạch': [
+    'Giảm Cholesterol',
+    'Huyết áp'
+  ]
+}
 

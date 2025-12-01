@@ -1,13 +1,103 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { products } from '../data/products'
+import { useAuth } from '../context/AuthContext'
+import { categories } from '../data/products'
 import './ProductDetail.css'
+
+// Import all images from assets folder
+const images = import.meta.glob('../assets/*.{jpg,jpeg,png,gif,webp}', { eager: true, import: 'default' })
+
+const resolveImageSrc = (img) => {
+  if (!img) return ''
+  const imgStr = String(img)
+  
+  // If it's already a full URL, return it
+  if (imgStr.startsWith('http://') || imgStr.startsWith('https://')) {
+    return imgStr
+  }
+  
+  // If it's a server upload path (starts with /uploads), prepend API URL
+  if (imgStr.startsWith('/uploads')) {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+    return `${apiUrl}${imgStr}`
+  }
+  
+  // Look for the image in our imported images
+  const imagePath = `../assets/${imgStr}`
+  if (images[imagePath]) {
+    return images[imagePath]
+  }
+  
+  // If not found, return a placeholder or the original string
+  console.warn(`Image not found: ${imgStr}`)
+  return imgStr
+}
 
 const ProductDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const product = products.find(p => p.id === parseInt(id))
+  const { isAuthenticated } = useAuth()
+  const [product, setProduct] = useState(null)
+  const [allProducts, setAllProducts] = useState([])
   const [quantity, setQuantity] = useState(1)
+  const [userId] = useState(localStorage.getItem('userId') || `guest_${Date.now()}`)
+  const [loading, setLoading] = useState(true)
+  const [selectedImage, setSelectedImage] = useState(null)
+
+  // Fetch all products from API
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+        const res = await fetch(`${apiUrl}/api/products?pageSize=1000`)
+        const data = await res.json()
+        
+        const list = Array.isArray(data?.data) ? data.data : 
+                     Array.isArray(data?.products) ? data.products : 
+                     Array.isArray(data) ? data : []
+        
+        const normalized = list.map(p => ({
+          id: p._id || p.id,
+          name: p.name,
+          brand: p.brand,
+          price: p.price,
+          originalPrice: p.originalPrice,
+          image: p.image || (Array.isArray(p.images) ? p.images[0] : ''),
+          images: Array.isArray(p.images) ? p.images : [p.image],
+          category: p.category,
+          description: p.description,
+          ingredients: p.ingredients,
+          usage: p.usage,
+          note: p.note,
+          rating: typeof p.rating === 'number' ? p.rating : 0,
+          reviews: typeof p.numReviews === 'number' ? p.numReviews : 0,
+          inStock: p.inStock !== false
+        }))
+        
+        setAllProducts(normalized)
+        const foundProduct = normalized.find(p => p.id === id)
+        setProduct(foundProduct || null)
+        if (foundProduct) {
+          setSelectedImage(foundProduct.image)
+        }
+        setLoading(false)
+      } catch (e) {
+        console.error('Fetch products error:', e)
+        setLoading(false)
+      }
+    }
+    fetchProducts()
+  }, [id])
+
+  if (loading) {
+    return (
+      <div className='product-detail-page'>
+        <div className='container'>
+          <div className='loading'>Đang tải...</div>
+        </div>
+      </div>
+    )
+  }
 
   if (!product) {
     return (
@@ -35,11 +125,52 @@ const ProductDetail = () => {
   }
 
   const handleAddToCart = () => {
-    // TODO: Implement add to cart functionality
-    alert(`Đã thêm ${quantity} sản phẩm vào giỏ hàng!`)
+    // Kiểm tra đăng nhập
+    if (!isAuthenticated) {
+      alert('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng')
+      navigate('/login')
+      return
+    }
+    
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+    const userIdToUse = localStorage.getItem('userId') || userId
+    if (!localStorage.getItem('userId')) localStorage.setItem('userId', userIdToUse)
+
+    const payload = {
+      userId: userIdToUse,
+      quantity,
+      // send client-side id so backend can match or store as clientProductId
+      clientProductId: String(product.id),
+      // provide product data so backend can add even if productId isn't a DB id
+      productData: {
+        name: product.name,
+        price: product.price,
+        image: product.image
+      }
+    }
+
+    fetch(`${apiUrl}/api/cart/add`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          // navigate to cart page
+          alert('Đã thêm sản phẩm vào giỏ hàng')
+          window.location.href = '/gio-hang'
+        } else {
+          alert(data.message || 'Không thể thêm vào giỏ hàng')
+        }
+      })
+      .catch(err => {
+        console.error('Add to cart error:', err)
+        alert('Lỗi khi thêm vào giỏ hàng')
+      })
   }
 
-  const relatedProducts = products
+  const relatedProducts = allProducts
     .filter(p => p.category === product.category && p.id !== product.id)
     .slice(0, 4)
 
@@ -57,11 +188,24 @@ const ProductDetail = () => {
         <div className='product-detail-content'>
           <div className='product-images'>
             <div className='main-image'>
-              <img src={product.image} alt={product.name} />
+              <img src={resolveImageSrc(selectedImage || product.image)} alt={product.name} />
               {discount > 0 && (
                 <div className='discount-badge'>-{discount}%</div>
               )}
             </div>
+            {product.images && product.images.length > 1 && (
+              <div className='thumbnail-images'>
+                {product.images.map((img, index) => (
+                  <div 
+                    key={index} 
+                    className={`thumbnail ${selectedImage === img ? 'active' : ''}`}
+                    onClick={() => setSelectedImage(img)}
+                  >
+                    <img src={resolveImageSrc(img)} alt={`${product.name} - ${index + 1}`} />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className='product-info-detail'>
@@ -162,7 +306,7 @@ const ProductDetail = () => {
                   className='related-product-card'
                   onClick={() => navigate(`/thuc-pham-chuc-nang/${relatedProduct.id}`)}
                 >
-                  <img src={relatedProduct.image} alt={relatedProduct.name} />
+                  <img src={resolveImageSrc(relatedProduct.image)} alt={relatedProduct.name} />
                   <h4>{relatedProduct.name}</h4>
                   <div className='related-product-price'>
                     {relatedProduct.price.toLocaleString('vi-VN')}đ

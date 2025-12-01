@@ -9,7 +9,8 @@
 
 .product-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 20px rgba(0, 86, 210, 0.2);
+  border: 1px solid var(--color-primary-soft);
 }
 
 .product-link {
@@ -58,7 +59,7 @@
 
 .product-brand {
   font-size: 0.85rem;
-  color: #00a859;
+  color: var(--color-primary);
   font-weight: 600;
   margin-bottom: 0.5rem;
   text-transform: uppercase;
@@ -108,7 +109,7 @@
 .current-price {
   font-size: 1.3rem;
   font-weight: 700;
-  color: #00a859;
+  color: var(--color-primary);
 }
 
 .original-price {

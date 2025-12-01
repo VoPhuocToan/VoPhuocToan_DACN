@@ -1,20 +1,104 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import bgImage from '../assets/bg1.jpg'
 import './Home.css'
 
+// Import background images
+const images = import.meta.glob('../assets/*.{jpg,jpeg,png,gif,webp}', { eager: true, import: 'default' })
+
+const getImage = (filename) => {
+  const path = `../assets/${filename}`
+  return images[path] || ''
+}
+
 const Home = () => {
+  const [currentMainSlide, setCurrentMainSlide] = useState(0)
+  const [currentSmallSlide, setCurrentSmallSlide] = useState(0)
+
+  // Main slider images
+  const mainSlides = [
+    { image: getImage('BG_lớn_1.png'), title: 'Thực phẩm chức năng chính hãng', subtitle: 'Chăm sóc sức khỏe toàn diện với sản phẩm chất lượng cao' },
+    { image: getImage('BG_lớn_2.png'), title: 'Sức khỏe là vàng', subtitle: 'Đầu tư cho sức khỏe hôm nay, hạnh phúc ngày mai' }
+  ]
+
+  // Small slider images
+  const smallSlides = [
+    getImage('bg_nhỏ_1.jpg'),
+    getImage('bg_nhỏ_2.jpg'),
+    getImage('bg_nhỏ_3.png')
+  ]
+
+  // Auto slide for main banner
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentMainSlide((prev) => (prev + 1) % mainSlides.length)
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [])
+
+  // Auto slide for small banner
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentSmallSlide((prev) => (prev + 1) % smallSlides.length)
+    }, 4000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const nextMainSlide = () => {
+    setCurrentMainSlide((prev) => (prev + 1) % mainSlides.length)
+  }
+
+  const prevMainSlide = () => {
+    setCurrentMainSlide((prev) => (prev - 1 + mainSlides.length) % mainSlides.length)
+  }
+
   return (
     <div className='home'>
-      {/* Banner */}
-      <section className='banner' style={{ backgroundImage: `url(${bgImage})` }}>
-        <div className='banner-overlay'></div>
-        <div className='banner-content'>
-          <h1>Thực phẩm chức năng chính hãng</h1>
-          <p>Chăm sóc sức khỏe toàn diện với sản phẩm chất lượng cao</p>
-          <Link to='/thuc-pham-chuc-nang' className='btn-primary'>
-            Khám phá ngay
-          </Link>
+      {/* Main Banner Slider */}
+      <section className='main-banner-slider'>
+        <div className='slider-container'>
+          {mainSlides.map((slide, index) => (
+            <div
+              key={index}
+              className={`slide ${index === currentMainSlide ? 'active' : ''}`}
+              style={{ backgroundImage: `url(${slide.image})` }}
+            >
+            </div>
+          ))}
+          
+          {/* Navigation buttons */}
+          <button className='slider-btn prev' onClick={prevMainSlide}>
+            <span>‹</span>
+          </button>
+          <button className='slider-btn next' onClick={nextMainSlide}>
+            <span>›</span>
+          </button>
+
+          {/* Dots indicator */}
+          <div className='slider-dots'>
+            {mainSlides.map((_, index) => (
+              <span
+                key={index}
+                className={`dot ${index === currentMainSlide ? 'active' : ''}`}
+                onClick={() => setCurrentMainSlide(index)}
+              ></span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Small Banner Slider */}
+      <section className='small-banner-section'>
+        <div className='container'>
+          <div className='small-slider-container'>
+            {smallSlides.map((slide, index) => (
+              <div
+                key={index}
+                className={`small-slide ${index === currentSmallSlide ? 'active' : ''}`}
+              >
+                <img src={slide} alt={`Khuyến mãi ${index + 1}`} />
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

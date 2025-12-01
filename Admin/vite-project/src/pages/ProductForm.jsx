@@ -9,12 +9,24 @@ const ProductForm = () => {
   const { token, API_URL } = useStore()
   const isEdit = !!id
 
+  // 8 danh mục mặc định cho sản phẩm thực phẩm chức năng
+  const categories = [
+    { value: 'Vitamin & Khoáng chất', label: 'Vitamin & Khoáng chất' },
+    { value: 'Sinh lý - Nội tiết tố', label: 'Sinh lý - Nội tiết tố' },
+    { value: 'Cải thiện tăng cường chức năng', label: 'Cải thiện tăng cường chức năng' },
+    { value: 'Hỗ trợ điều trị', label: 'Hỗ trợ điều trị' },
+    { value: 'Hỗ trợ tiêu hóa', label: 'Hỗ trợ tiêu hóa' },
+    { value: 'Thần kinh não', label: 'Thần kinh não' },
+    { value: 'Hỗ trợ làm đẹp', label: 'Hỗ trợ làm đẹp' },
+    { value: 'Sức khỏe tim mạch', label: 'Sức khỏe tim mạch' }
+  ]
+
   const [form, setForm] = useState({
     name: '',
     brand: '',
     price: 0,
     originalPrice: 0,
-    images: [''],
+    images: [],
     category: '',
     description: '',
     ingredients: '',
@@ -23,6 +35,8 @@ const ProductForm = () => {
     stock: 0,
     inStock: true
   })
+  const [imageFiles, setImageFiles] = useState([])
+  const [imagePreviews, setImagePreviews] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
@@ -36,10 +50,13 @@ const ProductForm = () => {
       const res = await fetch(`${API_URL}/products/${id}`)
       const data = await res.json()
       if (data.success) {
-        setForm({
+        const productData = {
           ...data.data,
-          images: data.data.images && data.data.images.length ? data.data.images : [data.data.image || '']
-        })
+          images: data.data.images || []
+        }
+        setForm(productData)
+        // Set existing images as previews
+        setImagePreviews(productData.images.map(img => `${API_URL.replace('/api', '')}${img}`))
       } else {
         setError(data.message || 'Không thể tải sản phẩm')
       }
@@ -56,33 +73,89 @@ const ProductForm = () => {
     setForm(prev => ({ ...prev, [name]: value }))
   }
 
-  const handleImageChange = (index, value) => {
-    const imgs = [...form.images]
-    imgs[index] = value
-    setForm(prev => ({ ...prev, images: imgs }))
+  const handleImageChange = (e) => {
+    const files = Array.from(e.target.files)
+    if (files.length === 0) return
+
+    // Validate file types
+    const validFiles = files.filter(file => {
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+      return validTypes.includes(file.type)
+    })
+
+    if (validFiles.length !== files.length) {
+      setError('Chỉ chấp nhận file ảnh (jpeg, jpg, png, gif, webp)')
+      return
+    }
+
+    // Validate file size (5MB max)
+    const oversizedFiles = validFiles.filter(file => file.size > 5 * 1024 * 1024)
+    if (oversizedFiles.length > 0) {
+      setError('Kích thước file không được vượt quá 5MB')
+      return
+    }
+
+    setImageFiles(prev => [...prev, ...validFiles])
+
+    // Create previews
+    validFiles.forEach(file => {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setImagePreviews(prev => [...prev, reader.result])
+      }
+      reader.readAsDataURL(file)
+    })
+
+    setError(null)
   }
 
-  const addImage = () => setForm(prev => ({ ...prev, images: [...prev.images, ''] }))
-  const removeImage = (index) => setForm(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== index) }))
+  const removeImage = (index) => {
+    setImageFiles(prev => prev.filter((_, i) => i !== index))
+    setImagePreviews(prev => prev.filter((_, i) => i !== index))
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
+    setError(null)
+
     try {
-      const payload = {
-        ...form,
-        price: Number(form.price),
-        originalPrice: Number(form.originalPrice),
-        stock: Number(form.stock)
+      // Create FormData for file upload
+      const formData = new FormData()
+      
+      // Append all form fields
+      formData.append('name', form.name)
+      formData.append('brand', form.brand)
+      formData.append('price', Number(form.price))
+      formData.append('originalPrice', Number(form.originalPrice))
+      formData.append('category', form.category)
+      formData.append('description', form.description)
+      formData.append('ingredients', form.ingredients)
+      formData.append('usage', form.usage)
+      formData.append('note', form.note)
+      formData.append('stock', Number(form.stock))
+      formData.append('inStock', form.inStock)
+
+      // Append image files
+      imageFiles.forEach((file) => {
+        formData.append('images', file)
+      })
+
+      // If editing and keeping old images
+      if (isEdit && form.images && form.images.length > 0) {
+        formData.append('keepOldImages', 'true')
+        form.images.forEach(img => {
+          formData.append('existingImages', img)
+        })
       }
 
       const res = await fetch(`${API_URL}/products${isEdit ? `/${id}` : ''}`, {
         method: isEdit ? 'PUT' : 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
+          // Don't set Content-Type, let browser set it with boundary for FormData
         },
-        body: JSON.stringify(payload)
+        body: formData
       })
 
       const data = await res.json()
@@ -131,7 +204,14 @@ const ProductForm = () => {
 
           <div className='form-group'>
             <label>Danh mục</label>
-            <input name='category' value={form.category} onChange={handleChange} required />
+            <select name='category' value={form.category} onChange={handleChange} required>
+              <option value=''>-- Chọn danh mục --</option>
+              {categories.map((cat) => (
+                <option key={cat.value} value={cat.value}>
+                  {cat.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className='form-group'>
@@ -150,14 +230,42 @@ const ProductForm = () => {
           </div>
 
           <div className='form-group'>
-            <label>Ảnh</label>
-            {form.images.map((img, idx) => (
-              <div key={idx} className='image-input-group'>
-                <input value={img} onChange={(e) => handleImageChange(idx, e.target.value)} placeholder='Image URL' />
-                <button type='button' onClick={() => removeImage(idx)}>Xóa</button>
+            <label>Hình ảnh sản phẩm</label>
+            <div className='image-upload-section'>
+              <div className='upload-box'>
+                <input
+                  type='file'
+                  id='image-upload'
+                  accept='image/*'
+                  multiple
+                  onChange={handleImageChange}
+                  style={{ display: 'none' }}
+                />
+                <label htmlFor='image-upload' className='upload-label'>
+                  <div className='upload-icon'>📷</div>
+                  <p>Chọn ảnh từ máy tính</p>
+                  <span className='upload-hint'>Hỗ trợ: JPG, PNG, GIF, WEBP (Tối đa 5MB)</span>
+                </label>
               </div>
-            ))}
-            <button type='button' onClick={addImage} className='btn btn-sm'>Thêm ảnh</button>
+
+              {imagePreviews.length > 0 && (
+                <div className='image-previews'>
+                  {imagePreviews.map((preview, idx) => (
+                    <div key={idx} className='preview-item'>
+                      <img src={preview} alt={`Preview ${idx + 1}`} />
+                      <button
+                        type='button'
+                        className='remove-image-btn'
+                        onClick={() => removeImage(idx)}
+                        title='Xóa ảnh'
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className='form-row'>

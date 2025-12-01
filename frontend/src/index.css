@@ -11,3 +11,16 @@ a {
   text-decoration: none;
   color: inherit;
 }
+
+/* Theme variables: FPT Retail Blue Theme */
+:root{
+  --color-primary: #0056D2; /* FPT Retail brand blue */
+  --color-primary-dark: #0A4FCC; /* darker brand blue */
+  --color-primary-light: #E8F5FF; /* light blue background */
+  --color-primary-medium: #4DA3FF; /* medium blue for gradients */
+  --color-primary-soft: #B9E0FF; /* soft blue for highlights */
+  --color-text: #212529;
+  --color-muted: #666666;
+  --color-bg: #fafafa;
+  --color-border: #e0e0e0;
+}

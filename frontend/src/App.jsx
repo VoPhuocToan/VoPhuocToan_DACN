@@ -12,6 +12,7 @@ import Cart from './pages/Cart'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import SearchResults from './pages/SearchResults'
+import OAuthCallback from './pages/OAuthCallback'
 import './App.css'
 import { AdminRoute, AdminLayout, AdminDashboard, AdminProductList, AdminProductForm, AdminCategoryList } from './admin'
 
@@ -44,6 +45,7 @@ const App = () => {
               <Route path='/lien-he' element={<Contact />} />
               <Route path='/gio-hang' element={<Cart />} />
               <Route path='/dang-nhap' element={<Login />} />
+              <Route path='/auth/success' element={<OAuthCallback />} />
               <Route path='/dang-ky' element={<Register />} />
 
               {/* Admin routes */}

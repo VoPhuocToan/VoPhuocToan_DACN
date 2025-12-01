@@ -32,21 +32,30 @@ export const getCart = asyncHandler(async (req, res) => {
 // @route   POST /api/cart/add
 // @access  Public
 export const addToCart = asyncHandler(async (req, res) => {
-  const { userId, productId, quantity = 1 } = req.body
+  const { userId, productId, quantity = 1, productData = null, clientProductId = null } = req.body
 
-  if (!userId || !productId) {
+  if (!userId) {
     return res.status(400).json({
       success: false,
-      message: 'User ID và Product ID là bắt buộc'
+      message: 'User ID là bắt buộc'
     })
   }
 
-  // Get product details
-  const product = await Product.findById(productId)
-  if (!product) {
-    return res.status(404).json({
+  // Try to load product from DB if productId provided
+  let product = null
+  if (productId) {
+    try {
+      product = await Product.findById(productId)
+    } catch (err) {
+      product = null
+    }
+  }
+
+  // If no product in DB, ensure we have productData from client
+  if (!product && !productData) {
+    return res.status(400).json({
       success: false,
-      message: 'Sản phẩm không tồn tại'
+      message: 'Sản phẩm không tồn tại và không có dữ liệu sản phẩm'
     })
   }
 
@@ -55,17 +64,26 @@ export const addToCart = asyncHandler(async (req, res) => {
     cart = new Cart({ userId, items: [] })
   }
 
-  // Check if item already in cart
-  const existingItem = cart.items.find(item => item.productId.toString() === productId)
+  // Determine a client identifier for matching (fallback to provided clientProductId)
+  const clientId = clientProductId || (productData && productData.clientProductId) || null
+
+  // Check if item already in cart (match by productId if exists, otherwise by clientProductId or name)
+  const existingItem = cart.items.find(item => {
+    if (product && item.productId && item.productId.toString() === product.id) return true
+    if (item.clientProductId && clientId && item.clientProductId === clientId) return true
+    if (!product && productData && item.name === productData.name) return true
+    return false
+  })
 
   if (existingItem) {
     existingItem.quantity += parseInt(quantity)
   } else {
     cart.items.push({
-      productId,
-      name: product.name,
-      price: product.price,
-      image: product.image,
+      productId: product ? product._id : null,
+      clientProductId: clientId,
+      name: product ? product.name : productData.name,
+      price: product ? product.price : productData.price,
+      image: product ? product.image : productData.image,
       quantity: parseInt(quantity)
     })
   }
@@ -83,9 +101,9 @@ export const addToCart = asyncHandler(async (req, res) => {
 // @route   PUT /api/cart/update
 // @access  Public
 export const updateCartItem = asyncHandler(async (req, res) => {
-  const { userId, productId, quantity } = req.body
+  const { userId, productId, quantity, clientProductId = null } = req.body
 
-  if (!userId || !productId || !quantity) {
+  if (!userId || !productId && !clientProductId || quantity === undefined) {
     return res.status(400).json({
       success: false,
       message: 'Vui lòng cung cấp đầy đủ thông tin'
@@ -107,7 +125,11 @@ export const updateCartItem = asyncHandler(async (req, res) => {
     })
   }
 
-  const item = cart.items.find(item => item.productId.toString() === productId)
+  const item = cart.items.find(it => {
+    if (it.productId && productId && it.productId.toString() === productId) return true
+    if (it.clientProductId && clientProductId && it.clientProductId === clientProductId) return true
+    return false
+  })
   if (!item) {
     return res.status(404).json({
       success: false,
@@ -129,9 +151,9 @@ export const updateCartItem = asyncHandler(async (req, res) => {
 // @route   DELETE /api/cart/remove
 // @access  Public
 export const removeFromCart = asyncHandler(async (req, res) => {
-  const { userId, productId } = req.body
+  const { userId, productId, clientProductId = null } = req.body
 
-  if (!userId || !productId) {
+  if (!userId || (!productId && !clientProductId)) {
     return res.status(400).json({
       success: false,
       message: 'User ID và Product ID là bắt buộc'
@@ -146,7 +168,11 @@ export const removeFromCart = asyncHandler(async (req, res) => {
     })
   }
 
-  cart.items = cart.items.filter(item => item.productId.toString() !== productId)
+  cart.items = cart.items.filter(item => {
+    if (productId && item.productId) return item.productId.toString() !== productId
+    if (clientProductId && item.clientProductId) return item.clientProductId !== clientProductId
+    return true
+  })
   await cart.save()
 
   res.json({

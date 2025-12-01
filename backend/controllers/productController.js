@@ -109,7 +109,19 @@ export const getProductsByCategory = asyncHandler(async (req, res) => {
 // @route   POST /api/products
 // @access  Private/Admin
 export const createProduct = asyncHandler(async (req, res) => {
-  const product = await Product.create(req.body)
+  const productData = { ...req.body }
+  
+  // Handle uploaded images
+  if (req.files && req.files.length > 0) {
+    productData.images = req.files.map(file => `/uploads/${file.filename}`)
+  } else if (!productData.images || productData.images.length === 0) {
+    // If no files uploaded, use image URLs from body (if any)
+    if (productData.image) {
+      productData.images = [productData.image]
+    }
+  }
+
+  const product = await Product.create(productData)
 
   res.status(201).json({
     success: true,
@@ -130,7 +142,20 @@ export const updateProduct = asyncHandler(async (req, res) => {
     })
   }
 
-  product = await Product.findByIdAndUpdate(req.params.id, req.body, {
+  const updateData = { ...req.body }
+  
+  // Handle uploaded images
+  if (req.files && req.files.length > 0) {
+    const newImages = req.files.map(file => `/uploads/${file.filename}`)
+    // Append new images to existing ones or replace
+    if (updateData.keepOldImages === 'true') {
+      updateData.images = [...(product.images || []), ...newImages]
+    } else {
+      updateData.images = newImages
+    }
+  }
+
+  product = await Product.findByIdAndUpdate(req.params.id, updateData, {
     new: true,
     runValidators: true
   })

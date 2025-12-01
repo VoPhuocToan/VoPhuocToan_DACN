@@ -84,7 +84,7 @@ const Contact = () => {
             <div className='info-content'>
               <h3>Gọi cho chúng tôi</h3>
               <p className='info-text'>
-                <strong>Hotline:</strong> 1800 6928
+                <strong>Hotline:</strong> 0355671458
               </p>
               <p className='info-text'>
                 <strong>Giờ làm việc:</strong> 8:00 - 22:00 (T2-CN)
@@ -99,10 +99,10 @@ const Contact = () => {
             <div className='info-content'>
               <h3>Gửi email cho chúng tôi</h3>
               <p className='info-text'>
-                support@healthycare.vn
+                tonvo1103@gmail.com
               </p>
               <p className='info-text'>
-                info@healthycare.vn
+                Liên hệ hỗ trợ 24/7
               </p>
             </div>
           </div>
@@ -114,10 +114,10 @@ const Contact = () => {
             <div className='info-content'>
               <h3>Địa chỉ</h3>
               <p className='info-text'>
-                123 Đường Nguyễn Huệ, Quận 1,
+                Số 145, Đường Đồng Khởi, Khóm 1, Phường 9,
               </p>
               <p className='info-text'>
-                Thành phố Hồ Chí Minh, Việt Nam
+                Thành Phố Trà Vinh, Tỉnh Vĩnh Long
               </p>
             </div>
           </div>

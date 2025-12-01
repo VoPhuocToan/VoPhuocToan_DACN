@@ -1,11 +1,11 @@
 .contact-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f5f5 0%, #e8f5e9 100%);
+  background: linear-gradient(135deg, #f5f8fb 0%, #eaf4ff 100%);
   padding-bottom: 60px;
 }
 
 .contact-header {
-  background: linear-gradient(135deg, #1a472a 0%, #2d5f3f 100%);
+  background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary) 100%);
   color: white;
   padding: 60px 20px;
   text-align: center;
@@ -57,7 +57,7 @@
 .info-icon {
   width: 60px;
   height: 60px;
-  background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -70,7 +70,7 @@
 .info-content h3 {
   font-size: 18px;
   font-weight: 600;
-  color: #1a472a;
+  color: var(--color-primary-dark);
   margin: 0 0 10px 0;
 }
 
@@ -88,7 +88,7 @@
 }
 
 .social-links a {
-  color: #4ade80;
+  color: var(--color-primary);
   text-decoration: none;
   font-weight: 500;
   font-size: 14px;
@@ -96,7 +96,7 @@
 }
 
 .social-links a:hover {
-  color: #22c55e;
+  color: var(--color-primary-dark);
   text-decoration: underline;
 }
 
@@ -131,9 +131,9 @@
 }
 
 .status-message.success {
-  background-color: #dcfce7;
-  color: #166534;
-  border-left: 4px solid #22c55e;
+  background-color: #e7f6ff;
+  color: var(--color-primary-dark);
+  border-left: 4px solid var(--color-primary);
 }
 
 .status-message.error {
@@ -161,7 +161,7 @@
 
 .form-group label {
   font-weight: 500;
-  color: #1a472a;
+  color: var(--color-primary-dark);
   font-size: 14px;
 }
 
@@ -178,8 +178,8 @@
 .form-group input:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #4ade80;
-  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(11, 111, 191, 0.08);
 }
 
 .form-group textarea {
@@ -195,7 +195,7 @@
 
 .submit-btn {
   padding: 14px 30px;
-  background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
   color: white;
   border: none;
   border-radius: 8px;
@@ -212,7 +212,7 @@
 
 .submit-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(74, 222, 128, 0.3);
+  box-shadow: 0 8px 20px rgba(0, 86, 210, 0.3);
 }
 
 .submit-btn:disabled {
@@ -243,7 +243,7 @@
 
 .contact-map h2 {
   font-size: 28px;
-  color: #1a472a;
+  color: var(--color-primary-dark);
   margin: 0 0 25px 0;
   text-align: center;
 }

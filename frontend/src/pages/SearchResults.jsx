@@ -1,6 +1,5 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import { products } from '../data/products'
 import ProductCard from '../components/ProductCard/ProductCard'
 import './SearchResults.css'
 
@@ -9,6 +8,8 @@ const SearchResults = () => {
   const navigate = useNavigate()
   const query = searchParams.get('q') || ''
   const [selectedCategory, setSelectedCategory] = useState('all')
+  const [products, setProducts] = useState([])
+  const [loading, setLoading] = useState(true)
 
   const categories = [
     'all',
@@ -22,25 +23,79 @@ const SearchResults = () => {
     'Sức khỏe tim mạch'
   ]
 
+  // Fetch products from API
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true)
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+        console.log('Fetching products from:', `${apiUrl}/api/products?pageSize=1000`)
+        const response = await fetch(`${apiUrl}/api/products?pageSize=1000`)
+        const data = await response.json()
+        
+        console.log('API Response:', data)
+        
+        if (data.success && Array.isArray(data.data)) {
+          // Normalize products for ProductCard
+          const normalized = data.data.map(p => ({
+            id: p._id || p.id,
+            name: p.name,
+            brand: p.brand,
+            price: p.price,
+            originalPrice: p.originalPrice,
+            image: p.image || (Array.isArray(p.images) ? p.images[0] : ''),
+            category: p.category,
+            description: p.description,
+            ingredients: p.ingredients,
+            usage: p.usage,
+            rating: typeof p.rating === 'number' ? p.rating : 0,
+            reviews: typeof p.numReviews === 'number' ? p.numReviews : 0,
+            inStock: p.inStock !== false
+          }))
+          console.log('Normalized products:', normalized.length)
+          setProducts(normalized)
+        }
+      } catch (error) {
+        console.error('Error fetching products:', error)
+        setProducts([])
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchProducts()
+  }, [])
+
   // Tìm kiếm sản phẩm
   const filteredProducts = useMemo(() => {
+    console.log('Search query:', query)
+    console.log('Total products:', products.length)
+    
+    if (!query.trim()) {
+      console.log('Empty query, returning all products')
+      return products
+    }
+    
     let results = products.filter(product => {
       const searchLower = query.toLowerCase()
-      return (
+      const matches = (
         product.name.toLowerCase().includes(searchLower) ||
         product.brand.toLowerCase().includes(searchLower) ||
         product.category.toLowerCase().includes(searchLower) ||
-        product.description.toLowerCase().includes(searchLower)
+        (product.description && product.description.toLowerCase().includes(searchLower))
       )
+      return matches
     })
+
+    console.log('Filtered results:', results.length)
 
     // Lọc theo category
     if (selectedCategory !== 'all') {
       results = results.filter(product => product.category === selectedCategory)
+      console.log('After category filter:', results.length)
     }
 
     return results
-  }, [query, selectedCategory])
+  }, [query, selectedCategory, products])
 
   const handleSearch = (newQuery) => {
     navigate(`/tim-kiem?q=${encodeURIComponent(newQuery)}`)
@@ -150,7 +205,11 @@ const SearchResults = () => {
           </div>
 
           {/* Results Grid */}
-          {filteredProducts.length > 0 ? (
+          {loading ? (
+            <div className='loading-state'>
+              <p>Đang tìm kiếm...</p>
+            </div>
+          ) : filteredProducts.length > 0 ? (
             <div className='products-grid'>
               {filteredProducts.map(product => (
                 <ProductCard key={product.id} product={product} />
