@@ -10,6 +10,12 @@ import ProductForm from './pages/ProductForm'
 import Categories from './pages/Categories'
 import ContactList from './pages/ContactList'
 import ContactDetail from './pages/ContactDetail'
+import OrderList from './pages/OrderList'
+import PromotionList from './pages/PromotionList'
+import PromotionForm from './pages/PromotionForm'
+import CommentList from './pages/CommentList'
+import UserList from './pages/UserList'
+import Revenue from './pages/Revenue'
 import './styles/index.css'
 
 function App() {
@@ -27,6 +33,13 @@ function App() {
             <Route path='categories' element={<Categories />} />
             <Route path='contact' element={<ContactList />} />
             <Route path='contact/:id' element={<ContactDetail />} />
+            <Route path='orders' element={<OrderList />} />
+            <Route path='revenue' element={<Revenue />} />
+            <Route path='promotions' element={<PromotionList />} />
+            <Route path='promotions/new' element={<PromotionForm />} />
+            <Route path='promotions/edit/:id' element={<PromotionForm />} />
+            <Route path='comments' element={<CommentList />} />
+            <Route path='users' element={<UserList />} />
           </Route>
 
           <Route path='*' element={<Navigate to='/' replace />} />

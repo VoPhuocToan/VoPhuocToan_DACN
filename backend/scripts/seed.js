@@ -3,6 +3,8 @@ import dotenv from 'dotenv'
 import Product from '../models/Product.js'
 import Category from '../models/Category.js'
 import User from '../models/User.js'
+import Order from '../models/Order.js'
+import Contact from '../models/Contact.js'
 // connectDB helper removed; use mongoose.connect directly here
 
 // Load env variables
@@ -828,14 +830,14 @@ const products = [
 
 // Categories data - 8 danh mục chính
 const categories = [
-  { name: 'Vitamin & Khoáng chất', description: 'Bổ sung vitamin và khoáng chất thiết yếu', icon: '💊' },
-  { name: 'Sinh lý - Nội tiết tố', description: 'Hỗ trợ sinh lý và cân bằng nội tiết tố', icon: '⚕️' },
-  { name: 'Cải thiện tăng cường chức năng', description: 'Tăng cường và cải thiện các chức năng cơ thể', icon: '⚡' },
-  { name: 'Hỗ trợ điều trị', description: 'Hỗ trợ điều trị các vấn đề sức khỏe', icon: '🏥' },
-  { name: 'Hỗ trợ tiêu hóa', description: 'Cải thiện hệ tiêu hóa và đường ruột', icon: '🌿' },
-  { name: 'Thần kinh não', description: 'Hỗ trợ sức khỏe thần kinh và não bộ', icon: '🧠' },
-  { name: 'Hỗ trợ làm đẹp', description: 'Hỗ trợ làm đẹp da, tóc, móng', icon: '✨' },
-  { name: 'Sức khỏe tim mạch', description: 'Hỗ trợ sức khỏe tim mạch', icon: '❤️' }
+  { name: 'Vitamin & Khoáng chất', slug: 'vitamin-khoang-chat', description: 'Bổ sung vitamin và khoáng chất thiết yếu', icon: '💊' },
+  { name: 'Sinh lý - Nội tiết tố', slug: 'sinh-ly-noi-tiet-to', description: 'Hỗ trợ sinh lý và cân bằng nội tiết tố', icon: '⚕️' },
+  { name: 'Cải thiện tăng cường chức năng', slug: 'cai-thien-tang-cuong-chuc-nang', description: 'Tăng cường và cải thiện các chức năng cơ thể', icon: '⚡' },
+  { name: 'Hỗ trợ điều trị', slug: 'ho-tro-dieu-tri', description: 'Hỗ trợ điều trị các vấn đề sức khỏe', icon: '🏥' },
+  { name: 'Hỗ trợ tiêu hóa', slug: 'ho-tro-tieu-hoa', description: 'Cải thiện hệ tiêu hóa và đường ruột', icon: '🌿' },
+  { name: 'Thần kinh não', slug: 'than-kinh-nao', description: 'Hỗ trợ sức khỏe thần kinh và não bộ', icon: '🧠' },
+  { name: 'Hỗ trợ làm đẹp', slug: 'ho-tro-lam-dep', description: 'Hỗ trợ làm đẹp da, tóc, móng', icon: '✨' },
+  { name: 'Sức khỏe tim mạch', slug: 'suc-khoe-tim-mach', description: 'Hỗ trợ sức khỏe tim mạch', icon: '❤️' }
 ]
 
 // Admin user data
@@ -847,6 +849,87 @@ const adminUser = {
   address: 'HealthyCare Headquarters',
   role: 'admin',
   isActive: true
+}
+
+const customerUsers = [
+  {
+    name: 'Nguyễn Văn An',
+    email: 'an.nguyen@example.com',
+    password: '123456',
+    phone: '0912345678',
+    address: '12 Nguyễn Trãi, Thanh Xuân, Hà Nội',
+    role: 'user',
+    isActive: true
+  },
+  {
+    name: 'Trần Thị Bình',
+    email: 'binh.tran@example.com',
+    password: '123456',
+    phone: '0908123456',
+    address: '45 Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh',
+    role: 'user',
+    isActive: true
+  },
+  {
+    name: 'Lê Quang Cường',
+    email: 'cuong.le@example.com',
+    password: '123456',
+    phone: '0987654321',
+    address: '89 Trần Phú, Hải Châu, Đà Nẵng',
+    role: 'user',
+    isActive: true
+  }
+]
+
+const buildOrderData = ({
+  user,
+  items,
+  shipping,
+  paymentMethod,
+  status,
+  shippingPrice,
+  isPaid,
+  paidAt,
+  isDelivered,
+  deliveredAt,
+  paymentResult
+}) => {
+  const orderItems = items.map(({ product, quantity }) => ({
+    product: product._id,
+    name: product.name,
+    image: product.image,
+    price: product.price,
+    quantity
+  }))
+
+  const itemsPrice = orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+
+  const order = {
+    user: user._id,
+    orderItems,
+    shippingAddress: shipping,
+    paymentMethod,
+    itemsPrice,
+    shippingPrice,
+    totalPrice: itemsPrice + shippingPrice,
+    status,
+    isPaid,
+    isDelivered
+  }
+
+  if (isPaid && paidAt) {
+    order.paidAt = paidAt
+  }
+
+  if (isDelivered && deliveredAt) {
+    order.deliveredAt = deliveredAt
+  }
+
+  if (paymentResult) {
+    order.paymentResult = paymentResult
+  }
+
+  return order
 }
 
 const seedData = async () => {
@@ -864,6 +947,8 @@ const seedData = async () => {
       await Product.collection.drop()
       await Category.collection.drop()
       await User.collection.drop()
+      await Order.collection.drop()
+      await Contact.collection.drop()
     } catch (err) {
       // Collections don't exist yet, that's fine
     }
@@ -880,6 +965,449 @@ const seedData = async () => {
     // Create admin user
     const createdAdmin = await User.create(adminUser)
     console.log(`✅ Đã tạo admin user: ${createdAdmin.email}`)
+
+    // Create sample customers
+    const createdCustomers = await User.create(customerUsers)
+    console.log(`✅ Đã tạo ${createdCustomers.length} khách hàng mẫu`)
+
+    if (createdProducts.length < 6) {
+      throw new Error('Cần ít nhất 6 sản phẩm để tạo đơn hàng mẫu')
+    }
+
+    const ordersData = [
+      buildOrderData({
+        user: createdCustomers[0],
+        items: [
+          { product: createdProducts[0], quantity: 2 },
+          { product: createdProducts[3], quantity: 1 }
+        ],
+        shipping: {
+          fullName: 'Nguyễn Văn An',
+          phone: '0912345678',
+          address: '12 Nguyễn Trãi',
+          city: 'Hà Nội',
+          district: 'Thanh Xuân',
+          ward: 'Thượng Đình'
+        },
+        paymentMethod: 'cod',
+        status: 'pending',
+        shippingPrice: 25000,
+        isPaid: false,
+        isDelivered: false
+      }),
+      buildOrderData({
+        user: createdCustomers[1],
+        items: [
+          { product: createdProducts[5], quantity: 1 },
+          { product: createdProducts[7], quantity: 2 }
+        ],
+        shipping: {
+          fullName: 'Trần Thị Bình',
+          phone: '0908123456',
+          address: '45 Nguyễn Huệ',
+          city: 'TP. Hồ Chí Minh',
+          district: 'Quận 1',
+          ward: 'Bến Nghé'
+        },
+        paymentMethod: 'momo',
+        status: 'processing',
+        shippingPrice: 30000,
+        isPaid: true,
+        paidAt: new Date(Date.now() - (2 * 24 * 60 * 60 * 1000)),
+        isDelivered: false,
+        paymentResult: {
+          id: 'momo_txn_1001',
+          status: 'success',
+          update_time: new Date().toISOString(),
+          email_address: createdCustomers[1].email
+        }
+      }),
+      buildOrderData({
+        user: createdCustomers[2],
+        items: [
+          { product: createdProducts[10], quantity: 1 },
+          { product: createdProducts[12], quantity: 3 }
+        ],
+        shipping: {
+          fullName: 'Lê Quang Cường',
+          phone: '0987654321',
+          address: '89 Trần Phú',
+          city: 'Đà Nẵng',
+          district: 'Hải Châu',
+          ward: 'Thạch Thang'
+        },
+        paymentMethod: 'bank',
+        status: 'shipped',
+        shippingPrice: 35000,
+        isPaid: true,
+        paidAt: new Date(Date.now() - (5 * 24 * 60 * 60 * 1000)),
+        isDelivered: false,
+        paymentResult: {
+          id: 'bank_transfer_2024_001',
+          status: 'settled',
+          update_time: new Date().toISOString(),
+          email_address: createdCustomers[2].email
+        }
+      }),
+      buildOrderData({
+        user: createdCustomers[0],
+        items: [
+          { product: createdProducts[15], quantity: 1 },
+          { product: createdProducts[18], quantity: 2 }
+        ],
+        shipping: {
+          fullName: 'Nguyễn Văn An',
+          phone: '0912345678',
+          address: '12 Nguyễn Trãi',
+          city: 'Hà Nội',
+          district: 'Thanh Xuân',
+          ward: 'Thượng Đình'
+        },
+        paymentMethod: 'vnpay',
+        status: 'delivered',
+        shippingPrice: 30000,
+        isPaid: true,
+        paidAt: new Date(Date.now() - (12 * 24 * 60 * 60 * 1000)),
+        isDelivered: true,
+        deliveredAt: new Date(Date.now() - (4 * 24 * 60 * 60 * 1000)),
+        paymentResult: {
+          id: 'vnpay_order_5588',
+          status: 'success',
+          update_time: new Date().toISOString(),
+          email_address: createdCustomers[0].email
+        }
+      }),
+      buildOrderData({
+        user: createdCustomers[1],
+        items: [
+          { product: createdProducts[20], quantity: 1 }
+        ],
+        shipping: {
+          fullName: 'Trần Thị Bình',
+          phone: '0908123456',
+          address: '45 Nguyễn Huệ',
+          city: 'TP. Hồ Chí Minh',
+          district: 'Quận 1',
+          ward: 'Bến Thành'
+        },
+        paymentMethod: 'cod',
+        status: 'cancelled',
+        shippingPrice: 20000,
+        isPaid: false,
+        isDelivered: false
+      }),
+      // Thêm nhiều đơn hàng delivered để có doanh thu
+      buildOrderData({
+        user: createdCustomers[0],
+        items: [
+          { product: createdProducts[1], quantity: 2 },
+          { product: createdProducts[4], quantity: 1 },
+          { product: createdProducts[8], quantity: 3 }
+        ],
+        shipping: {
+          fullName: 'Nguyễn Văn An',
+          phone: '0912345678',
+          address: '12 Nguyễn Trãi',
+          city: 'Hà Nội',
+          district: 'Thanh Xuân',
+          ward: 'Thượng Đình'
+        },
+        paymentMethod: 'vnpay',
+        status: 'delivered',
+        shippingPrice: 25000,
+        isPaid: true,
+        paidAt: new Date(Date.now() - (20 * 24 * 60 * 60 * 1000)),
+        isDelivered: true,
+        deliveredAt: new Date(Date.now() - (15 * 24 * 60 * 60 * 1000)),
+        paymentResult: {
+          id: 'vnpay_order_5589',
+          status: 'success',
+          update_time: new Date().toISOString(),
+          email_address: createdCustomers[0].email
+        }
+      }),
+      buildOrderData({
+        user: createdCustomers[1],
+        items: [
+          { product: createdProducts[2], quantity: 1 },
+          { product: createdProducts[6], quantity: 2 }
+        ],
+        shipping: {
+          fullName: 'Trần Thị Bình',
+          phone: '0908123456',
+          address: '45 Nguyễn Huệ',
+          city: 'TP. Hồ Chí Minh',
+          district: 'Quận 1',
+          ward: 'Bến Nghé'
+        },
+        paymentMethod: 'momo',
+        status: 'delivered',
+        shippingPrice: 30000,
+        isPaid: true,
+        paidAt: new Date(Date.now() - (18 * 24 * 60 * 60 * 1000)),
+        isDelivered: true,
+        deliveredAt: new Date(Date.now() - (12 * 24 * 60 * 60 * 1000)),
+        paymentResult: {
+          id: 'momo_txn_1002',
+          status: 'success',
+          update_time: new Date().toISOString(),
+          email_address: createdCustomers[1].email
+        }
+      }),
+      buildOrderData({
+        user: createdCustomers[2],
+        items: [
+          { product: createdProducts[9], quantity: 2 },
+          { product: createdProducts[11], quantity: 1 },
+          { product: createdProducts[14], quantity: 1 }
+        ],
+        shipping: {
+          fullName: 'Lê Quang Cường',
+          phone: '0987654321',
+          address: '89 Trần Phú',
+          city: 'Đà Nẵng',
+          district: 'Hải Châu',
+          ward: 'Thạch Thang'
+        },
+        paymentMethod: 'bank',
+        status: 'delivered',
+        shippingPrice: 35000,
+        isPaid: true,
+        paidAt: new Date(Date.now() - (25 * 24 * 60 * 60 * 1000)),
+        isDelivered: true,
+        deliveredAt: new Date(Date.now() - (20 * 24 * 60 * 60 * 1000)),
+        paymentResult: {
+          id: 'bank_transfer_2024_002',
+          status: 'settled',
+          update_time: new Date().toISOString(),
+          email_address: createdCustomers[2].email
+        }
+      }),
+      buildOrderData({
+        user: createdCustomers[0],
+        items: [
+          { product: createdProducts[16], quantity: 1 },
+          { product: createdProducts[19], quantity: 2 },
+          { product: createdProducts[22], quantity: 1 }
+        ],
+        shipping: {
+          fullName: 'Nguyễn Văn An',
+          phone: '0912345678',
+          address: '12 Nguyễn Trãi',
+          city: 'Hà Nội',
+          district: 'Thanh Xuân',
+          ward: 'Thượng Đình'
+        },
+        paymentMethod: 'cod',
+        status: 'delivered',
+        shippingPrice: 25000,
+        isPaid: true,
+        paidAt: new Date(Date.now() - (10 * 24 * 60 * 60 * 1000)),
+        isDelivered: true,
+        deliveredAt: new Date(Date.now() - (7 * 24 * 60 * 60 * 1000)),
+        paymentResult: {
+          id: 'cod_collected_001',
+          status: 'collected',
+          update_time: new Date().toISOString(),
+          email_address: createdCustomers[0].email
+        }
+      }),
+      buildOrderData({
+        user: createdCustomers[1],
+        items: [
+          { product: createdProducts[24], quantity: 2 },
+          { product: createdProducts[27], quantity: 1 }
+        ],
+        shipping: {
+          fullName: 'Trần Thị Bình',
+          phone: '0908123456',
+          address: '45 Nguyễn Huệ',
+          city: 'TP. Hồ Chí Minh',
+          district: 'Quận 1',
+          ward: 'Bến Nghé'
+        },
+        paymentMethod: 'vnpay',
+        status: 'delivered',
+        shippingPrice: 30000,
+        isPaid: true,
+        paidAt: new Date(Date.now() - (8 * 24 * 60 * 60 * 1000)),
+        isDelivered: true,
+        deliveredAt: new Date(Date.now() - (5 * 24 * 60 * 60 * 1000)),
+        paymentResult: {
+          id: 'vnpay_order_5590',
+          status: 'success',
+          update_time: new Date().toISOString(),
+          email_address: createdCustomers[1].email
+        }
+      }),
+      // Thêm đơn đang xử lý
+      buildOrderData({
+        user: createdCustomers[2],
+        items: [
+          { product: createdProducts[30], quantity: 1 },
+          { product: createdProducts[33], quantity: 2 }
+        ],
+        shipping: {
+          fullName: 'Lê Quang Cường',
+          phone: '0987654321',
+          address: '89 Trần Phú',
+          city: 'Đà Nẵng',
+          district: 'Hải Châu',
+          ward: 'Thạch Thang'
+        },
+        paymentMethod: 'momo',
+        status: 'processing',
+        shippingPrice: 35000,
+        isPaid: true,
+        paidAt: new Date(Date.now() - (1 * 24 * 60 * 60 * 1000)),
+        isDelivered: false,
+        paymentResult: {
+          id: 'momo_txn_1003',
+          status: 'success',
+          update_time: new Date().toISOString(),
+          email_address: createdCustomers[2].email
+        }
+      }),
+      // Thêm đơn đang giao
+      buildOrderData({
+        user: createdCustomers[0],
+        items: [
+          { product: createdProducts[35], quantity: 1 },
+          { product: createdProducts[38], quantity: 1 }
+        ],
+        shipping: {
+          fullName: 'Nguyễn Văn An',
+          phone: '0912345678',
+          address: '12 Nguyễn Trãi',
+          city: 'Hà Nội',
+          district: 'Thanh Xuân',
+          ward: 'Thượng Đình'
+        },
+        paymentMethod: 'bank',
+        status: 'shipped',
+        shippingPrice: 25000,
+        isPaid: true,
+        paidAt: new Date(Date.now() - (3 * 24 * 60 * 60 * 1000)),
+        isDelivered: false,
+        paymentResult: {
+          id: 'bank_transfer_2024_003',
+          status: 'settled',
+          update_time: new Date().toISOString(),
+          email_address: createdCustomers[0].email
+        }
+      }),
+      // Thêm đơn chờ xử lý
+      buildOrderData({
+        user: createdCustomers[1],
+        items: [
+          { product: createdProducts[40], quantity: 2 },
+          { product: createdProducts[42], quantity: 1 }
+        ],
+        shipping: {
+          fullName: 'Trần Thị Bình',
+          phone: '0908123456',
+          address: '45 Nguyễn Huệ',
+          city: 'TP. Hồ Chí Minh',
+          district: 'Quận 1',
+          ward: 'Bến Nghé'
+        },
+        paymentMethod: 'cod',
+        status: 'pending',
+        shippingPrice: 30000,
+        isPaid: false,
+        isDelivered: false
+      }),
+      buildOrderData({
+        user: createdCustomers[2],
+        items: [
+          { product: createdProducts[25], quantity: 1 },
+          { product: createdProducts[28], quantity: 3 }
+        ],
+        shipping: {
+          fullName: 'Lê Quang Cường',
+          phone: '0987654321',
+          address: '89 Trần Phú',
+          city: 'Đà Nẵng',
+          district: 'Hải Châu',
+          ward: 'Thạch Thang'
+        },
+        paymentMethod: 'vnpay',
+        status: 'pending',
+        shippingPrice: 35000,
+        isPaid: false,
+        isDelivered: false
+      })
+    ]
+
+    const createdOrders = await Order.insertMany(ordersData)
+    console.log(`✅ Đã thêm ${createdOrders.length} đơn hàng mẫu với nhiều trạng thái`)
+
+    // Tạo liên hệ mẫu
+    const contactsData = [
+      {
+        name: 'Phạm Minh Tuấn',
+        email: 'tuan.pham@gmail.com',
+        phone: '0901234567',
+        subject: 'Hỏi về sản phẩm Vitamin C',
+        message: 'Xin chào, tôi muốn hỏi về liều dùng Vitamin C 500mg Nature\'s Bounty cho người lớn tuổi. Mẹ tôi năm nay 65 tuổi, không biết có nên uống không và liều dùng như thế nào?',
+        status: 'new'
+      },
+      {
+        name: 'Nguyễn Thị Mai',
+        email: 'mai.nguyen@yahoo.com',
+        phone: '0912345678',
+        subject: 'Đơn hàng chưa nhận được',
+        message: 'Tôi đã đặt đơn hàng cách đây 5 ngày nhưng vẫn chưa nhận được hàng. Mã đơn hàng của tôi là #123456. Xin hãy kiểm tra giúp tôi.',
+        status: 'read'
+      },
+      {
+        name: 'Trần Văn Hùng',
+        email: 'hung.tran@outlook.com',
+        phone: '0987654321',
+        subject: 'Tư vấn sản phẩm bổ gan',
+        message: 'Tôi thường xuyên phải tiếp khách và uống rượu bia. Cho tôi hỏi sản phẩm nào hỗ trợ bảo vệ gan tốt nhất? Tôi đang quan tâm đến Dr. Liver Jpanwell.',
+        status: 'replied',
+        reply: 'Chào anh Hùng, Dr. Liver Jpanwell là sản phẩm rất phù hợp với nhu cầu của anh. Sản phẩm chứa Silymarin từ cây Kế sữa giúp bảo vệ và tái tạo tế bào gan. Anh nên uống 1 viên x 2 lần/ngày sau bữa ăn. Ngoài ra, anh có thể kết hợp thêm uống nhiều nước và hạn chế rượu bia.',
+        repliedAt: new Date(Date.now() - (2 * 24 * 60 * 60 * 1000))
+      },
+      {
+        name: 'Lê Thị Hồng',
+        email: 'hong.le@gmail.com',
+        phone: '0909876543',
+        subject: 'Hỏi về chính sách đổi trả',
+        message: 'Tôi mua sản phẩm nhưng phát hiện sản phẩm bị hỏng seal khi nhận hàng. Tôi muốn đổi sản phẩm mới, quy trình đổi trả như thế nào ạ?',
+        status: 'new'
+      },
+      {
+        name: 'Võ Đình Khoa',
+        email: 'khoa.vo@gmail.com',
+        phone: '0918765432',
+        subject: 'Đăng ký làm đại lý',
+        message: 'Tôi có cửa hàng thuốc ở Bình Dương và muốn đăng ký làm đại lý phân phối sản phẩm của HealthyCare. Xin cho tôi biết điều kiện và quy trình đăng ký.',
+        status: 'read'
+      },
+      {
+        name: 'Hoàng Thị Lan',
+        email: 'lan.hoang@hotmail.com',
+        phone: '0923456789',
+        subject: 'Cảm ơn dịch vụ tốt',
+        message: 'Tôi muốn gửi lời cảm ơn đến đội ngũ HealthyCare. Sản phẩm chất lượng, giao hàng nhanh và nhân viên tư vấn rất nhiệt tình. Tôi sẽ tiếp tục ủng hộ!',
+        status: 'replied',
+        reply: 'Cảm ơn chị Lan đã tin tưởng và ủng hộ HealthyCare! Chúng tôi rất vui khi nhận được phản hồi tích cực từ khách hàng. Chúc chị và gia đình nhiều sức khỏe!',
+        repliedAt: new Date(Date.now() - (1 * 24 * 60 * 60 * 1000))
+      },
+      {
+        name: 'Đặng Quốc Bảo',
+        email: 'bao.dang@gmail.com',
+        phone: '0934567890',
+        subject: 'Hỏi về sản phẩm cho bà bầu',
+        message: 'Vợ tôi đang mang thai tháng thứ 4. Xin tư vấn giúp tôi những sản phẩm vitamin nào an toàn cho bà bầu?',
+        status: 'new'
+      }
+    ]
+
+    await Contact.insertMany(contactsData)
+    console.log(`✅ Đã thêm ${contactsData.length} liên hệ mẫu`)
 
     console.log('✅ Seed data thành công!')
     process.exit(0)

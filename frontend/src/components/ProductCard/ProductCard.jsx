@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import './ProductCard.css'
@@ -9,9 +9,139 @@ const images = import.meta.glob('../../assets/*.{jpg,jpeg,png,gif,webp}', { eage
 const ProductCard = ({ product }) => {
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
+  const [isFavorite, setIsFavorite] = useState(false)
+  
   const discount = product.originalPrice 
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0
+
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+
+  // Check if product is in favorites
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setIsFavorite(false)
+      return
+    }
+
+    const checkFavorite = async () => {
+      try {
+        const token = localStorage.getItem('token')
+        if (!token) {
+          setIsFavorite(false)
+          return
+        }
+
+        const productId = product.id || product._id
+        const response = await fetch(`${apiUrl}/api/favorites/check/${productId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+
+        const data = await response.json()
+        if (data.success) {
+          setIsFavorite(data.isFavorite)
+        }
+      } catch (error) {
+        console.error('Error checking favorite:', error)
+        setIsFavorite(false)
+      }
+    }
+
+    checkFavorite()
+  }, [product, isAuthenticated, apiUrl])
+
+  // Listen for favorites updates
+  useEffect(() => {
+    const handleFavoritesUpdate = () => {
+      if (!isAuthenticated) return
+      
+      const checkFavorite = async () => {
+        try {
+          const token = localStorage.getItem('token')
+          if (!token) return
+
+          const productId = product.id || product._id
+          const response = await fetch(`${apiUrl}/api/favorites/check/${productId}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+
+          const data = await response.json()
+          if (data.success) {
+            setIsFavorite(data.isFavorite)
+          }
+        } catch (error) {
+          console.error('Error checking favorite:', error)
+        }
+      }
+
+      checkFavorite()
+    }
+
+    window.addEventListener('favoritesUpdated', handleFavoritesUpdate)
+    return () => window.removeEventListener('favoritesUpdated', handleFavoritesUpdate)
+  }, [product, isAuthenticated, apiUrl])
+
+  const handleToggleFavorite = async (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    // Kiểm tra đăng nhập
+    if (!isAuthenticated) {
+      alert('Vui lòng đăng nhập để thêm sản phẩm vào danh sách yêu thích')
+      navigate('/dang-nhap')
+      return
+    }
+
+    try {
+      const token = localStorage.getItem('token')
+      const productId = product.id || product._id
+
+      if (isFavorite) {
+        // Remove from favorites
+        const response = await fetch(`${apiUrl}/api/favorites/${productId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+
+        const data = await response.json()
+        if (data.success) {
+          setIsFavorite(false)
+          // Dispatch event to update other components
+          window.dispatchEvent(new Event('favoritesUpdated'))
+        } else {
+          alert(data.message || 'Không thể xóa khỏi danh sách yêu thích')
+        }
+      } else {
+        // Add to favorites
+        const response = await fetch(`${apiUrl}/api/favorites`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ productId })
+        })
+
+        const data = await response.json()
+        if (data.success) {
+          setIsFavorite(true)
+          // Dispatch event to update other components
+          window.dispatchEvent(new Event('favoritesUpdated'))
+        } else {
+          alert(data.message || 'Không thể thêm vào danh sách yêu thích')
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error)
+      alert('Lỗi khi cập nhật danh sách yêu thích')
+    }
+  }
 
   const handleAddToCart = async (e) => {
     e.preventDefault()
@@ -89,6 +219,13 @@ const ProductCard = ({ product }) => {
         {discount > 0 && (
           <div className='product-badge'>-{discount}%</div>
         )}
+        <button 
+          className={`favorite-icon-btn ${isFavorite ? 'active' : ''}`}
+          onClick={handleToggleFavorite}
+          title={isFavorite ? 'Xóa khỏi yêu thích' : 'Thêm vào yêu thích'}
+        >
+          <i className={`fi ${isFavorite ? 'fi-sr-heart' : 'fi-rr-heart'}`}></i>
+        </button>
         <div className='product-image-container'>
           <img src={resolveImageSrc(product.image)} alt={product.name} className='product-image' />
         </div>
@@ -115,7 +252,15 @@ const ProductCard = ({ product }) => {
         </div>
       </Link>
       <div className='product-actions'>
-        <button className='btn-add-small' onClick={handleAddToCart}>Thêm</button>
+        <button 
+          className='btn-add-small' 
+          onClick={handleAddToCart}
+          disabled={!product.inStock}
+          title={product.inStock ? 'Thêm vào giỏ hàng' : 'Sản phẩm đã hết hàng'}
+        >
+          <i className='fi fi-rr-shopping-cart'></i>
+          {product.inStock ? 'Thêm vào giỏ' : 'Hết hàng'}
+        </button>
       </div>
     </div>
   )

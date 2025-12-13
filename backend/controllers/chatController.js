@@ -1,4 +1,4 @@
-import axios from 'axios'
+import OpenAI from 'openai'
 import asyncHandler from '../utils/asyncHandler.js'
 
 // @desc    Chat with AI
@@ -31,9 +31,11 @@ export const chatWithAI = asyncHandler(async (req, res) => {
   console.log('✅ API key found, calling OpenAI...')
 
   try {
-    const systemMessage = {
-      role: 'system',
-      content: `Bạn là AI trợ lý chuyên tư vấn về THỰC PHẨM CHỨC NĂNG cho nhà thuốc HealthyCare.
+    const openai = new OpenAI({
+      apiKey: apiKey
+    })
+
+    const systemPrompt = `Bạn là AI trợ lý chuyên tư vấn về THỰC PHẨM CHỨC NĂNG cho nhà thuốc HealthyCare.
 
 QUY TẮC QUAN TRỌNG:
 1. CHỈ trả lời các câu hỏi liên quan đến:
@@ -60,26 +62,18 @@ QUY TẮC QUAN TRỌNG:
    - Luôn nhắc nhở người dùng tham khảo ý kiến bác sĩ/dược sĩ khi cần
 
 Hãy tuân thủ nghiêm ngặt các quy tắc trên.`
-    }
 
-    const response = await axios.post(
-      'https://api.openai.com/v1/chat/completions',
-      {
-        model: 'gpt-3.5-turbo',
-        messages: [systemMessage, ...messages],
-        temperature: 0.3,
-        max_tokens: 500
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        }
-      }
-    )
+    const completion = await openai.chat.completions.create({
+      messages: [
+        { role: 'system', content: systemPrompt },
+        ...messages
+      ],
+      model: 'gpt-3.5-turbo',
+      temperature: 0.3,
+      max_tokens: 500,
+    })
 
-    const assistantMessage = response.data.choices[0]?.message?.content || 
-      'Xin lỗi, tôi không thể trả lời câu hỏi này.'
+    const assistantMessage = completion.choices[0].message.content || 'Xin lỗi, tôi không thể trả lời câu hỏi này.'
 
     console.log('✅ OpenAI response received')
     console.log('Response length:', assistantMessage.length)
@@ -92,10 +86,9 @@ Hãy tuân thủ nghiêm ngặt các quy tắc trên.`
       }
     })
   } catch (error) {
-    console.error('❌ OpenAI API Error:')
+    console.error('❌ OpenAI Error:')
     console.error('Error message:', error.message)
-    console.error('Error response:', error.response?.data)
-    console.error('Error status:', error.response?.status)
+    console.error('Error details:', error)
     
     res.status(500).json({
       success: false,
@@ -104,4 +97,6 @@ Hãy tuân thủ nghiêm ngặt các quy tắc trên.`
     })
   }
 })
+
+
 

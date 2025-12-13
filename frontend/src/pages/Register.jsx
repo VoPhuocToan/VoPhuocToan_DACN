@@ -276,7 +276,7 @@ const Register = () => {
                 disabled={isLoading}
               />
               <span>
-                Tôi đồng ý với <Link to='#'>Điều khoản sử dụng</Link> và <Link to='#'>Chính sách bảo mật</Link>
+                Tôi đồng ý với <Link to='/dieu-khoan-su-dung'>Điều khoản sử dụng</Link>
               </span>
             </label>
 

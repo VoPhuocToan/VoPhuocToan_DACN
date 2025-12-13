@@ -1,14 +1,16 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import '../styles/Layout.css'
 
 const Layout = () => {
+  const [isCollapsed, setIsCollapsed] = useState(false)
+
   return (
     <div className='layout'>
-      <Sidebar />
+      <Sidebar isCollapsed={isCollapsed} toggleSidebar={() => setIsCollapsed(!isCollapsed)} />
 
-      <main className='main-content'>
+      <main className={`main-content ${isCollapsed ? 'collapsed' : ''}`}>
         <Outlet />
       </main>
     </div>

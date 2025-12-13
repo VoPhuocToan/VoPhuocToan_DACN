@@ -38,20 +38,5 @@ router.get('/google/callback', passport.authenticate('google', { session: false,
   }
 })
 
-// Start Facebook OAuth flow
-router.get('/facebook', passport.authenticate('facebook', { scope: ['email'] }))
-
-// Facebook callback
-router.get('/facebook/callback', passport.authenticate('facebook', { session: false, failureRedirect: (process.env.FRONTEND_URL || 'http://localhost:5174') + '/dang-nhap' }), (req, res) => {
-  try {
-    if (!req.user) return res.redirect((process.env.FRONTEND_URL || 'http://localhost:5174') + '/dang-nhap')
-    const token = req.user.getSignedJwtToken()
-    const frontend = process.env.FRONTEND_URL || 'http://localhost:5174'
-    return res.redirect(`${frontend}/auth/success?token=${token}`)
-  } catch (err) {
-    return res.redirect((process.env.FRONTEND_URL || 'http://localhost:5174') + '/dang-nhap')
-  }
-})
-
 export default router
 

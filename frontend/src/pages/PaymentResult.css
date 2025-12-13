@@ -1,0 +1,121 @@
+.payment-result-container {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background-color: #f8f9fa;
+}
+
+.result-card {
+  background: white;
+  padding: 3rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  text-align: center;
+  max-width: 500px;
+  width: 100%;
+  animation: slideUp 0.5s ease;
+}
+
+.icon-wrapper {
+  font-size: 5rem;
+  margin-bottom: 1.5rem;
+}
+
+.success .icon-wrapper {
+  color: #28a745;
+}
+
+.cancel .icon-wrapper {
+  color: #dc3545;
+}
+
+.result-card h1 {
+  font-size: 1.8rem;
+  color: #333;
+  margin-bottom: 1rem;
+}
+
+.result-card p {
+  color: #666;
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+}
+
+.order-ref {
+  font-weight: 600;
+  color: #333 !important;
+  margin: 1rem 0 !important;
+  padding: 0.5rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  display: inline-block;
+}
+
+.actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+.btn-primary, .btn-secondary {
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background: #007bff;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #0056b3;
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background: #e9ecef;
+  color: #333;
+}
+
+.btn-secondary:hover {
+  background: #dee2e6;
+  transform: translateY(-2px);
+}
+
+.redirect-text {
+  font-size: 0.9rem;
+  color: #999 !important;
+  margin-top: 2rem !important;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 480px) {
+  .result-card {
+    padding: 2rem;
+  }
+  
+  .actions {
+    flex-direction: column;
+  }
+  
+  .btn-primary, .btn-secondary {
+    width: 100%;
+    text-align: center;
+  }
+}

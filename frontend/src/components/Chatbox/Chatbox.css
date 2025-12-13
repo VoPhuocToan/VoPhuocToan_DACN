@@ -5,6 +5,13 @@
   z-index: 9999;
 }
 
+.chatbox-icon-img {
+  width: 35px;
+  height: 35px;
+  object-fit: contain;
+  filter: brightness(0) invert(1); /* Make icon white */
+}
+
 /* Toggle Button */
 .chatbox-toggle-btn {
   width: 60px;

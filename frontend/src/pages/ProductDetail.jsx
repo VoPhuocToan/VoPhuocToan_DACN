@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { categories } from '../data/products'
 import './ProductDetail.css'
 
 // Import all images from assets folder
@@ -36,19 +35,23 @@ const resolveImageSrc = (img) => {
 const ProductDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, token, user } = useAuth()
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
   const [product, setProduct] = useState(null)
   const [allProducts, setAllProducts] = useState([])
   const [quantity, setQuantity] = useState(1)
   const [userId] = useState(localStorage.getItem('userId') || `guest_${Date.now()}`)
   const [loading, setLoading] = useState(true)
   const [selectedImage, setSelectedImage] = useState(null)
+  const [isFavorite, setIsFavorite] = useState(false)
+  const [reviews, setReviews] = useState([])
+  const [reviewStats, setReviewStats] = useState({ average: 0, count: 0 })
+  const authenticatedUserId = user ? (user._id || user.id || user.userId || user?.data?._id || user?.data?.id || null) : null
 
   // Fetch all products from API
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
         const res = await fetch(`${apiUrl}/api/products?pageSize=1000`)
         const data = await res.json()
         
@@ -56,23 +59,30 @@ const ProductDetail = () => {
                      Array.isArray(data?.products) ? data.products : 
                      Array.isArray(data) ? data : []
         
-        const normalized = list.map(p => ({
-          id: p._id || p.id,
-          name: p.name,
-          brand: p.brand,
-          price: p.price,
-          originalPrice: p.originalPrice,
-          image: p.image || (Array.isArray(p.images) ? p.images[0] : ''),
-          images: Array.isArray(p.images) ? p.images : [p.image],
-          category: p.category,
-          description: p.description,
-          ingredients: p.ingredients,
-          usage: p.usage,
-          note: p.note,
-          rating: typeof p.rating === 'number' ? p.rating : 0,
-          reviews: typeof p.numReviews === 'number' ? p.numReviews : 0,
-          inStock: p.inStock !== false
-        }))
+        const normalized = list.map(p => {
+          const stock = Number(p.stock) || 0
+          // Đảm bảo inStock sync với stock: nếu stock = 0 thì inStock = false
+          const inStock = stock > 0 && (p.inStock !== false)
+          return {
+            id: p._id || p.id,
+            _id: p._id || p.id,
+            name: p.name,
+            brand: p.brand,
+            price: p.price,
+            originalPrice: p.originalPrice,
+            image: p.image || (Array.isArray(p.images) ? p.images[0] : ''),
+            images: Array.isArray(p.images) ? p.images : [p.image],
+            category: p.category,
+            description: p.description,
+            ingredients: p.ingredients,
+            usage: p.usage,
+            note: p.note,
+            rating: typeof p.rating === 'number' ? p.rating : 0,
+            reviews: typeof p.numReviews === 'number' ? p.numReviews : 0,
+            inStock: inStock,
+            stock: stock
+          }
+        })
         
         setAllProducts(normalized)
         const foundProduct = normalized.find(p => p.id === id)
@@ -88,6 +98,89 @@ const ProductDetail = () => {
     }
     fetchProducts()
   }, [id])
+
+  // Check if product is in favorites
+  useEffect(() => {
+    if (!product || !isAuthenticated) {
+      setIsFavorite(false)
+      return
+    }
+
+    const checkFavorite = async () => {
+      try {
+        const token = localStorage.getItem('token')
+        if (!token) {
+          setIsFavorite(false)
+          return
+        }
+
+        const productId = product.id || product._id
+        const response = await fetch(`${apiUrl}/api/favorites/check/${productId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+
+        const data = await response.json()
+        if (data.success) {
+          setIsFavorite(data.isFavorite)
+        }
+      } catch (error) {
+        console.error('Error checking favorite:', error)
+        setIsFavorite(false)
+      }
+    }
+
+    checkFavorite()
+  }, [product, isAuthenticated, apiUrl])
+
+  const computeReviewStats = (list, fallbackRating = 0, fallbackCount = 0) => {
+    if (Array.isArray(list) && list.length > 0) {
+      const avg = list.reduce((sum, review) => sum + Number(review.rating || 0), 0) / list.length
+      return {
+        average: Math.round(avg * 10) / 10,
+        count: list.length
+      }
+    }
+
+    return {
+      average: typeof fallbackRating === 'number' ? Math.round(fallbackRating * 10) / 10 : 0,
+      count: typeof fallbackCount === 'number' ? fallbackCount : 0
+    }
+  }
+
+  const getStarSegments = (value) => {
+    const safeValue = Math.min(5, Math.max(0, Math.floor(Number(value || 0))))
+    return {
+      filled: '★'.repeat(safeValue),
+      empty: '☆'.repeat(5 - safeValue)
+    }
+  }
+
+  useEffect(() => {
+    if (!product) return
+
+    const fetchReviews = async () => {
+      try {
+        const res = await fetch(`${apiUrl}/api/products/${product.id}/reviews`)
+        const data = await res.json()
+
+        if (data.success) {
+          const list = Array.isArray(data.data) ? data.data : []
+          setReviews(list)
+          const stats = computeReviewStats(list, data.rating, data.count)
+          setReviewStats(stats)
+        } else {
+          setReviews([])
+          setReviewStats(computeReviewStats([], data?.rating, data?.count))
+        }
+      } catch (error) {
+        console.error('Fetch reviews error:', error)
+      }
+    }
+
+    fetchReviews()
+  }, [product, apiUrl, authenticatedUserId])
 
   if (loading) {
     return (
@@ -114,61 +207,191 @@ const ProductDetail = () => {
     )
   }
 
+  const ratingToDisplay = reviewStats.count ? reviewStats.average : product.rating
+  const reviewCountToDisplay = reviewStats.count ? reviewStats.count : product.reviews
+  const roundedRating = Number(ratingToDisplay || 0)
+  const mainStars = getStarSegments(roundedRating)
+
   const discount = product.originalPrice 
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0
-
-  const totalPrice = product.price * quantity
 
   const handleQuantityChange = (delta) => {
     setQuantity(prev => Math.max(1, prev + delta))
   }
 
-  const handleAddToCart = () => {
+  const handleToggleFavorite = async () => {
+    // Kiểm tra đăng nhập
+    if (!isAuthenticated) {
+      alert('Vui lòng đăng nhập để thêm sản phẩm vào danh sách yêu thích')
+      navigate('/dang-nhap')
+      return
+    }
+
+    try {
+      const token = localStorage.getItem('token')
+      const productId = product.id || product._id
+
+      if (isFavorite) {
+        // Remove from favorites
+        const response = await fetch(`${apiUrl}/api/favorites/${productId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+
+        const data = await response.json()
+        if (data.success) {
+          setIsFavorite(false)
+          alert('Đã xóa khỏi danh sách yêu thích')
+          // Dispatch event to update other components
+          window.dispatchEvent(new Event('favoritesUpdated'))
+        } else {
+          alert(data.message || 'Không thể xóa khỏi danh sách yêu thích')
+        }
+      } else {
+        // Add to favorites
+        const response = await fetch(`${apiUrl}/api/favorites`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ productId })
+        })
+
+        const data = await response.json()
+        if (data.success) {
+          setIsFavorite(true)
+          alert('Đã thêm vào danh sách yêu thích')
+          // Dispatch event to update other components
+          window.dispatchEvent(new Event('favoritesUpdated'))
+        } else {
+          alert(data.message || 'Không thể thêm vào danh sách yêu thích')
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error)
+      alert('Lỗi khi cập nhật danh sách yêu thích')
+    }
+  }
+
+  const handleAddToCart = async () => {
     // Kiểm tra đăng nhập
     if (!isAuthenticated) {
       alert('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng')
-      navigate('/login')
+      navigate('/dang-nhap')
+      return
+    }
+
+    // Kiểm tra stock
+    if (!product.inStock || product.stock === 0) {
+      alert('Sản phẩm đã hết hàng')
+      return
+    }
+
+    // Kiểm tra số lượng
+    if (quantity > product.stock) {
+      alert(`Số lượng vượt quá tồn kho. Chỉ còn ${product.stock} sản phẩm`)
       return
     }
     
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
-    const userIdToUse = localStorage.getItem('userId') || userId
-    if (!localStorage.getItem('userId')) localStorage.setItem('userId', userIdToUse)
+    try {
+      const userIdToUse = localStorage.getItem('userId') || userId
+      if (!localStorage.getItem('userId')) localStorage.setItem('userId', userIdToUse)
 
-    const payload = {
-      userId: userIdToUse,
-      quantity,
-      // send client-side id so backend can match or store as clientProductId
-      clientProductId: String(product.id),
-      // provide product data so backend can add even if productId isn't a DB id
-      productData: {
-        name: product.name,
-        price: product.price,
-        image: product.image
+      const payload = {
+        userId: userIdToUse,
+        quantity,
+        productId: product.id || product._id, // Thêm productId để backend có thể tìm sản phẩm
+        clientProductId: String(product.id),
+        productData: {
+          name: product.name,
+          price: product.price,
+          image: product.image
+        }
       }
+
+      const response = await fetch(`${apiUrl}/api/cart/add`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+
+      const data = await response.json()
+      
+      if (data.success) {
+        alert('Đã thêm sản phẩm vào giỏ hàng')
+        // Dùng navigate thay vì window.location.href
+        navigate('/gio-hang')
+      } else {
+        alert(data.message || 'Không thể thêm vào giỏ hàng')
+      }
+    } catch (err) {
+      console.error('Add to cart error:', err)
+      alert('Lỗi khi thêm vào giỏ hàng')
+    }
+  }
+
+  const handleBuyNow = async () => {
+    // Kiểm tra đăng nhập
+    if (!isAuthenticated) {
+      alert('Vui lòng đăng nhập để mua hàng')
+      navigate('/dang-nhap')
+      return
     }
 
-    fetch(`${apiUrl}/api/cart/add`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          // navigate to cart page
-          alert('Đã thêm sản phẩm vào giỏ hàng')
-          window.location.href = '/gio-hang'
-        } else {
-          alert(data.message || 'Không thể thêm vào giỏ hàng')
+    // Kiểm tra stock
+    if (!product.inStock || product.stock === 0) {
+      alert('Sản phẩm đã hết hàng')
+      return
+    }
+
+    // Kiểm tra số lượng
+    if (quantity > product.stock) {
+      alert(`Số lượng vượt quá tồn kho. Chỉ còn ${product.stock} sản phẩm`)
+      return
+    }
+
+    try {
+      const userIdToUse = localStorage.getItem('userId') || userId
+      if (!localStorage.getItem('userId')) localStorage.setItem('userId', userIdToUse)
+
+      const payload = {
+        userId: userIdToUse,
+        quantity,
+        productId: product.id || product._id,
+        clientProductId: String(product.id),
+        productData: {
+          name: product.name,
+          price: product.price,
+          image: product.image
         }
+      }
+
+      // Thêm vào giỏ hàng trước
+      const response = await fetch(`${apiUrl}/api/cart/add`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       })
-      .catch(err => {
-        console.error('Add to cart error:', err)
-        alert('Lỗi khi thêm vào giỏ hàng')
-      })
+
+      const data = await response.json()
+      
+      if (data.success) {
+        // Chuyển đến trang checkout
+        navigate('/checkout')
+      } else {
+        alert(data.message || 'Không thể thêm vào giỏ hàng')
+      }
+    } catch (err) {
+      console.error('Buy now error:', err)
+      alert('Lỗi khi thêm vào giỏ hàng')
+    }
   }
+
+
 
   const relatedProducts = allProducts
     .filter(p => p.category === product.category && p.id !== product.id)
@@ -209,16 +432,26 @@ const ProductDetail = () => {
           </div>
 
           <div className='product-info-detail'>
-            <div className='product-brand-detail'>{product.brand}</div>
-            <h1 className='product-title'>{product.name}</h1>
+            <div className='product-header-row'>
+              <div>
+                <div className='product-brand-detail'>{product.brand}</div>
+                <h1 className='product-title'>{product.name}</h1>
+              </div>
+              <button 
+                className={`favorite-btn ${isFavorite ? 'active' : ''}`}
+                onClick={handleToggleFavorite}
+                title={isFavorite ? 'Xóa khỏi yêu thích' : 'Thêm vào yêu thích'}
+              >
+                <i className={`fi ${isFavorite ? 'fi-sr-heart' : 'fi-rr-heart'}`}></i>
+              </button>
+            </div>
             
             <div className='product-rating-detail'>
               <span className='stars'>
-                {'★'.repeat(Math.floor(product.rating))}
-                {'☆'.repeat(5 - Math.floor(product.rating))}
+                {mainStars.filled}{mainStars.empty}
               </span>
-              <span className='rating-value'>{product.rating}</span>
-              <span className='reviews'>({product.reviews} đánh giá)</span>
+              <span className='rating-value'>{roundedRating.toFixed(1)}</span>
+              <span className='reviews'>({reviewCountToDisplay} đánh giá)</span>
             </div>
 
             <div className='product-price-detail'>
@@ -244,12 +477,12 @@ const ProductDetail = () => {
                 <button onClick={() => handleQuantityChange(1)}>+</button>
               </div>
 
-              {product.inStock ? (
+              {product.inStock && product.stock > 0 ? (
                 <div className='action-buttons'>
                   <button className='btn-add-cart' onClick={handleAddToCart}>
                     Thêm vào giỏ hàng
                   </button>
-                  <button className='btn-buy-now'>
+                  <button className='btn-buy-now' onClick={handleBuyNow}>
                     Mua ngay
                   </button>
                 </div>
@@ -293,6 +526,46 @@ const ProductDetail = () => {
           <div className='tab-content'>
             <h3>Mô tả chi tiết</h3>
             <p>{product.description}</p>
+          </div>
+
+          <div className='tab-content reviews-section'>
+            <h3>Đánh giá sản phẩm</h3>
+            <div className='review-summary'>
+              <div className='summary-score'>
+                <div className='score-value'>{roundedRating.toFixed(1)}</div>
+                <div className='score-stars'>{mainStars.filled}{mainStars.empty}</div>
+                <div className='score-count'>{reviewCountToDisplay} đánh giá</div>
+              </div>
+              <div className='summary-info'>
+                <p>Sản phẩm chỉ hiển thị tối đa 5 đánh giá mới nhất.</p>
+                <p>Để đánh giá sản phẩm, vui lòng vào mục <strong>Đơn hàng của tôi</strong> sau khi đã mua và nhận hàng thành công.</p>
+              </div>
+            </div>
+
+            <div className='review-list'>
+              {reviews.length === 0 ? (
+                <p className='no-reviews'>Chưa có đánh giá nào cho sản phẩm này.</p>
+              ) : (
+                reviews.map((review, index) => {
+                  const reviewerName = review.user?.name || 'Người dùng ẩn danh'
+                  const reviewStars = getStarSegments(review.rating)
+                  const reviewDate = review.createdAt ? new Date(review.createdAt).toLocaleDateString('vi-VN') : ''
+
+                  return (
+                    <div className='review-item' key={review._id || `${review.user}-${index}`}>
+                      <div className='review-header'>
+                        <div className='review-author'>{reviewerName}</div>
+                        <div className='review-meta'>
+                          <span className='review-stars'>{reviewStars.filled}{reviewStars.empty}</span>
+                          {reviewDate && <span className='review-date'>{reviewDate}</span>}
+                        </div>
+                      </div>
+                      {review.comment && <p className='review-comment'>{review.comment}</p>}
+                    </div>
+                  )
+                })
+              )}
+            </div>
           </div>
         </div>
 

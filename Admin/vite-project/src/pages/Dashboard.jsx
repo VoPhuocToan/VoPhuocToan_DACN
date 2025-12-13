@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import { useStore } from '../context/StoreContext'
+import { useNavigate } from 'react-router-dom'
 import '../styles/Dashboard.css'
 
 const Dashboard = () => {
   const { token, API_URL } = useStore()
+  const navigate = useNavigate()
   const [stats, setStats] = useState({
     totalProducts: 0,
     totalCategories: 0,
@@ -13,28 +15,40 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchStats()
-  }, [])
+    if (token) {
+      fetchStats()
+    }
+  }, [token])
 
   const fetchStats = async () => {
+    if (!token) return
+    
     try {
-      const [productsRes, categoriesRes, ordersRes] = await Promise.all([
+      const [productsRes, categoriesRes, ordersStatsRes] = await Promise.all([
         fetch(`${API_URL}/products?pageSize=1000`),
         fetch(`${API_URL}/categories`),
-        fetch(`${API_URL}/orders`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+        fetch(`${API_URL}/orders/stats`, {
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
         })
       ])
 
       const productsData = await productsRes.json()
       const categoriesData = await categoriesRes.json()
-      const ordersData = await ordersRes.json()
+      const ordersStatsData = await ordersStatsRes.json()
+
+      const orderStats = ordersStatsData.data?.summary || {}
 
       setStats({
         totalProducts: productsData.data?.length || 0,
         totalCategories: categoriesData.data?.length || 0,
-        totalOrders: ordersData.data?.length || 0,
-        totalRevenue: ordersData.data?.reduce((sum, order) => sum + (order.totalPrice || 0), 0) || 0
+        totalOrders: orderStats.total || 0,
+        totalRevenue: orderStats.totalRevenue || 0,
+        pendingOrders: orderStats.pending || 0,
+        processingOrders: orderStats.processing || 0,
+        deliveredOrders: orderStats.delivered || 0
       })
     } catch (error) {
       console.error('Error fetching stats:', error)
@@ -53,11 +67,11 @@ const Dashboard = () => {
             <p className='dashboard-subtitle'>Tổng quan hoạt động kinh doanh hôm nay</p>
           </div>
           <div className='header-actions'>
-            <button className='btn-action btn-revenue'>
-              <span className='btn-icon'>📊</span>
+            <button className='btn-action btn-revenue' onClick={() => navigate('/revenue')}>
+              <span className='btn-icon'>💰</span>
               <span>Xem doanh thu</span>
             </button>
-            <button className='btn-action btn-orders'>
+            <button className='btn-action btn-orders' onClick={() => navigate('/orders')}>
               <span className='btn-icon'>📦</span>
               <span>Quản lý đơn hàng</span>
             </button>
@@ -107,7 +121,7 @@ const Dashboard = () => {
                 <div className='kpi-content'>
                   <h3 className='kpi-label'>Tổng đơn hàng</h3>
                   <p className='kpi-value'>{stats.totalOrders}</p>
-                  <p className='kpi-subtitle'>Không có đơn chờ</p>
+                  <p className='kpi-subtitle'>{stats.pendingOrders || 0} đơn chờ xác nhận</p>
                 </div>
               </div>
 

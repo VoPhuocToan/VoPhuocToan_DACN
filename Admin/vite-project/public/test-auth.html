@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Auth Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+    .section {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    .btn {
+      background: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    .btn:hover {
+      background: #45a049;
+    }
+    .output {
+      background: #f4f4f4;
+      padding: 10px;
+      border-radius: 4px;
+      margin-top: 10px;
+      white-space: pre-wrap;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    .error { color: red; }
+    .success { color: green; }
+  </style>
+</head>
+<body>
+  <h1>Admin Authentication Test</h1>
+  
+  <div class="section">
+    <h2>1. Check LocalStorage</h2>
+    <button class="btn" onclick="checkLocalStorage()">Check Storage</button>
+    <div id="storageOutput" class="output"></div>
+  </div>
+
+  <div class="section">
+    <h2>2. Test Login</h2>
+    <input type="email" id="email" placeholder="Email" value="admin@healthycare.com" style="padding: 8px; margin: 5px; width: 200px;">
+    <input type="password" id="password" placeholder="Password" value="admin123" style="padding: 8px; margin: 5px; width: 200px;">
+    <button class="btn" onclick="testLogin()">Test Login</button>
+    <div id="loginOutput" class="output"></div>
+  </div>
+
+  <div class="section">
+    <h2>3. Test API Calls</h2>
+    <button class="btn" onclick="testOrdersStats()">Test Orders Stats</button>
+    <button class="btn" onclick="testUsers()">Test Users</button>
+    <button class="btn" onclick="testOrders()">Test Orders</button>
+    <div id="apiOutput" class="output"></div>
+  </div>
+
+  <script>
+    const API_URL = 'http://localhost:5000/api';
+
+    function checkLocalStorage() {
+      const output = document.getElementById('storageOutput');
+      const token = localStorage.getItem('adminToken');
+      const user = localStorage.getItem('adminUser');
+      
+      let html = '<strong>LocalStorage Contents:</strong>\n\n';
+      html += `adminToken: ${token ? 'EXISTS (length: ' + token.length + ')' : 'NOT FOUND'}\n`;
+      html += `adminUser: ${user || 'NOT FOUND'}\n\n`;
+      
+      if (token) {
+        html += `Token Preview: ${token.substring(0, 50)}...\n`;
+      }
+      
+      output.innerHTML = html;
+    }
+
+    async function testLogin() {
+      const output = document.getElementById('loginOutput');
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      
+      output.innerHTML = 'Testing login...\n';
+      
+      try {
+        const response = await fetch(`${API_URL}/auth/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, password }),
+        });
+        
+        const data = await response.json();
+        
+        let html = `<strong class="${response.ok ? 'success' : 'error'}">Response Status: ${response.status}</strong>\n\n`;
+        html += `Response Data:\n${JSON.stringify(data, null, 2)}\n\n`;
+        
+        if (data.success && data.data && data.data.token) {
+          localStorage.setItem('adminToken', data.data.token);
+          const { token, ...userData } = data.data;
+          localStorage.setItem('adminUser', JSON.stringify(userData));
+          html += '<strong class="success">✓ Token saved to localStorage</strong>';
+        }
+        
+        output.innerHTML = html;
+      } catch (error) {
+        output.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+      }
+    }
+
+    async function testOrdersStats() {
+      const output = document.getElementById('apiOutput');
+      const token = localStorage.getItem('adminToken');
+      
+      if (!token) {
+        output.innerHTML = '<span class="error">No token found. Please login first.</span>';
+        return;
+      }
+      
+      output.innerHTML = 'Testing /api/orders/stats...\n';
+      
+      try {
+        const response = await fetch(`${API_URL}/orders/stats`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        const data = await response.json();
+        
+        let html = `<strong class="${response.ok ? 'success' : 'error'}">Response Status: ${response.status}</strong>\n\n`;
+        html += `Response Data:\n${JSON.stringify(data, null, 2)}`;
+        
+        output.innerHTML = html;
+      } catch (error) {
+        output.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+      }
+    }
+
+    async function testUsers() {
+      const output = document.getElementById('apiOutput');
+      const token = localStorage.getItem('adminToken');
+      
+      if (!token) {
+        output.innerHTML = '<span class="error">No token found. Please login first.</span>';
+        return;
+      }
+      
+      output.innerHTML = 'Testing /api/users...\n';
+      
+      try {
+        const response = await fetch(`${API_URL}/users?page=1&pageSize=10`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        const data = await response.json();
+        
+        let html = `<strong class="${response.ok ? 'success' : 'error'}">Response Status: ${response.status}</strong>\n\n`;
+        html += `Response Data:\n${JSON.stringify(data, null, 2)}`;
+        
+        output.innerHTML = html;
+      } catch (error) {
+        output.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+      }
+    }
+
+    async function testOrders() {
+      const output = document.getElementById('apiOutput');
+      const token = localStorage.getItem('adminToken');
+      
+      if (!token) {
+        output.innerHTML = '<span class="error">No token found. Please login first.</span>';
+        return;
+      }
+      
+      output.innerHTML = 'Testing /api/orders...\n';
+      
+      try {
+        const response = await fetch(`${API_URL}/orders?pageSize=10`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        const data = await response.json();
+        
+        let html = `<strong class="${response.ok ? 'success' : 'error'}">Response Status: ${response.status}</strong>\n\n`;
+        html += `Response Data:\n${JSON.stringify(data, null, 2)}`;
+        
+        output.innerHTML = html;
+      } catch (error) {
+        output.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+      }
+    }
+
+    // Auto-check on load
+    window.onload = () => {
+      checkLocalStorage();
+    };
+  </script>
+</body>
+</html>

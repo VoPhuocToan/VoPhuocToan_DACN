@@ -72,6 +72,10 @@ const productSchema = new mongoose.Schema({
     comment: {
       type: String
     },
+    reply: {
+      comment: { type: String },
+      createdAt: { type: Date, default: Date.now }
+    },
     createdAt: {
       type: Date,
       default: Date.now
@@ -101,6 +105,30 @@ const productSchema = new mongoose.Schema({
 
 // Index for search
 productSchema.index({ name: 'text', description: 'text', brand: 'text' })
+
+// Pre-save hook: Tự động sync inStock với stock
+productSchema.pre('save', function(next) {
+  // Nếu stock = 0 hoặc stock < 0, set inStock = false
+  // Nếu stock > 0, set inStock = true
+  if (this.stock !== undefined) {
+    this.inStock = this.stock > 0
+  }
+  next()
+})
+
+// Pre-update hook: Tự động sync inStock với stock khi update
+productSchema.pre(['updateOne', 'findOneAndUpdate', 'updateMany'], function(next) {
+  // Nếu có update stock, tự động sync inStock
+  const update = this.getUpdate()
+  if (update && update.$set && update.$set.stock !== undefined) {
+    update.$set.inStock = update.$set.stock > 0
+  } else if (update && update.stock !== undefined) {
+    // Handle direct update (not $set)
+    if (!update.$set) update.$set = {}
+    update.$set.inStock = update.stock > 0
+  }
+  next()
+})
 
 const Product = mongoose.model('Product', productSchema)
 

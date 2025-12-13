@@ -1,6 +1,5 @@
 import passport from 'passport'
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20'
-import { Strategy as FacebookStrategy } from 'passport-facebook'
 import User from '../models/User.js'
 import crypto from 'crypto'
 
@@ -60,26 +59,6 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   console.log('❌ Google OAuth NOT configured - Missing credentials')
   console.log('   GOOGLE_CLIENT_ID:', process.env.GOOGLE_CLIENT_ID ? 'Found' : 'MISSING')
   console.log('   GOOGLE_CLIENT_SECRET:', process.env.GOOGLE_CLIENT_SECRET ? 'Found' : 'MISSING')
-}
-
-// Facebook Strategy
-if (process.env.FACEBOOK_APP_ID && process.env.FACEBOOK_APP_SECRET) {
-  passport.use(new FacebookStrategy({
-    clientID: process.env.FACEBOOK_APP_ID,
-    clientSecret: process.env.FACEBOOK_APP_SECRET,
-    callbackURL: `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/auth/facebook/callback`,
-    profileFields: ['id', 'displayName', 'photos', 'email']
-  }, async (accessToken, refreshToken, profile, done) => {
-    try {
-      const email = profile.emails && profile.emails[0] && profile.emails[0].value
-      const name = profile.displayName
-      const avatar = profile.photos && profile.photos[0] && profile.photos[0].value
-      const user = await findOrCreateUser({ email, name, avatar })
-      return done(null, user)
-    } catch (err) {
-      return done(err, null)
-    }
-  }))
 }
 
 export default passport

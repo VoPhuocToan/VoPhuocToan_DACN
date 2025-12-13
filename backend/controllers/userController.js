@@ -7,10 +7,34 @@ import asyncHandler from '../utils/asyncHandler.js'
 export const getUsers = asyncHandler(async (req, res) => {
   const pageSize = Number(req.query.pageSize) || 10
   const page = Number(req.query.page) || 1
+  
+  // Build query filters
+  let query = {}
+  
+  // Filter by role
+  if (req.query.role) {
+    query.role = req.query.role
+  }
+  
+  // Filter by isActive status
+  if (req.query.isActive !== undefined && req.query.isActive !== '') {
+    query.isActive = req.query.isActive === 'true'
+  }
+  
+  // Search by name, email, phone
+  if (req.query.search) {
+    const searchRegex = new RegExp(req.query.search, 'i')
+    query.$or = [
+      { name: searchRegex },
+      { email: searchRegex },
+      { phone: searchRegex }
+    ]
+  }
 
-  const count = await User.countDocuments({ isActive: true })
-  const users = await User.find({ isActive: true })
+  const count = await User.countDocuments(query)
+  const users = await User.find(query)
     .select('-password')
+    .sort({ createdAt: -1 })
     .limit(pageSize)
     .skip(pageSize * (page - 1))
 
@@ -19,6 +43,11 @@ export const getUsers = asyncHandler(async (req, res) => {
     count,
     page,
     pages: Math.ceil(count / pageSize),
+    pagination: {
+      page,
+      pages: Math.ceil(count / pageSize),
+      total: count
+    },
     data: users
   })
 })

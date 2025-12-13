@@ -9,6 +9,12 @@
   display: flex;
   flex-direction: column;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+  transition: width 0.3s ease;
+  z-index: 1000;
+}
+
+.sidebar.collapsed {
+  width: 80px;
 }
 
 .sidebar-header {
@@ -16,13 +22,54 @@
   padding: 20px;
   border-bottom: 3px solid #ff5722;
   color: white;
+  transition: padding 0.3s ease;
+}
+
+.sidebar.collapsed .sidebar-header {
+  padding: 15px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+.sidebar.collapsed .header-top {
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.toggle-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s;
+}
+
+.toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.4);
 }
 
 .sidebar-header h2 {
-  margin: 0 0 20px 0;
+  margin: 0;
   font-size: 1.3rem;
   font-weight: 700;
   letter-spacing: 1px;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .user-info {
@@ -32,6 +79,13 @@
   background: rgba(255, 255, 255, 0.1);
   padding: 12px;
   border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.sidebar.collapsed .user-info {
+  padding: 0;
+  background: transparent;
+  justify-content: center;
 }
 
 .user-avatar {
@@ -45,9 +99,18 @@
   flex-shrink: 0;
 }
 
+.sidebar.collapsed .user-avatar {
+  width: 40px;
+  height: 40px;
+}
+
 .avatar-icon {
   font-size: 28px;
   filter: brightness(0) invert(1);
+}
+
+.sidebar.collapsed .avatar-icon {
+  font-size: 20px;
 }
 
 .user-name {
@@ -55,11 +118,14 @@
   font-weight: 600;
   font-size: 0.95rem;
   color: white;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .sidebar-nav {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 15px 0;
 }
 
@@ -84,6 +150,12 @@
   transition: all 0.3s ease;
   border-left: 3px solid transparent;
   font-weight: 500;
+  white-space: nowrap;
+}
+
+.sidebar.collapsed .nav-link {
+  justify-content: center;
+  padding: 14px 10px;
 }
 
 .nav-link:hover {
@@ -105,12 +177,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .sidebar-footer {
   padding: 20px;
   border-top: 2px solid rgba(0, 0, 0, 0.05);
   background: #f5f5f5;
+}
+
+.sidebar.collapsed .sidebar-footer {
+  padding: 15px 10px;
 }
 
 .logout-btn {
@@ -129,6 +206,13 @@
   justify-content: center;
   gap: 8px;
   box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.sidebar.collapsed .logout-btn {
+  padding: 12px 0;
+  width: 100%;
 }
 
 .logout-btn:hover {

@@ -38,6 +38,7 @@ const Cart = () => {
   const [cartItems, setCartItems] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [userId] = useState(localStorage.getItem('userId') || `guest_${Date.now()}`)
+  const [selectedItems, setSelectedItems] = useState([])
 
   // Load cart on mount
   useEffect(() => {
@@ -58,7 +59,9 @@ const Cart = () => {
       const data = await response.json()
 
       if (data.success && data.data.items) {
-        setCartItems(data.data.items)
+        // Filter out items with null productId (deleted products)
+        const validItems = data.data.items.filter(item => item.productId)
+        setCartItems(validItems)
       }
     } catch (error) {
       console.error('Error loading cart:', error)
@@ -99,7 +102,11 @@ const Cart = () => {
     }
   }
 
-  const removeItem = async (productId, clientProductId = null) => {
+  const removeItem = async (productId, clientProductId = null, productName = '') => {
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa "${productName || 'sản phẩm này'}" khỏi giỏ hàng?`)) {
+      return
+    }
+
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
       const userIdToUse = localStorage.getItem('userId') || userId
@@ -119,194 +126,185 @@ const Cart = () => {
       const data = await response.json()
       if (data.success) {
         loadCart()
+        // Remove from selected items if it was selected
+        const idToRemove = (typeof productId === 'object' && productId?._id) ? productId._id : productId
+        setSelectedItems(prev => prev.filter(id => id !== idToRemove))
+      } else {
+        alert(data.message || 'Không thể xóa sản phẩm khỏi giỏ hàng')
       }
     } catch (error) {
       console.error('Error removing item:', error)
+      alert('Lỗi khi xóa sản phẩm khỏi giỏ hàng')
     }
   }
 
-  const clearCart = async () => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa tất cả sản phẩm?')) return
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      const allIds = cartItems
+        .filter(item => item.productId)
+        .map(item => item.productId._id || item.productId)
+      setSelectedItems(allIds)
+    } else {
+      setSelectedItems([])
+    }
+  }
 
-    try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
-      const userIdToUse = localStorage.getItem('userId') || userId
-
-      const response = await fetch(`${apiUrl}/api/cart/clear`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          userId: userIdToUse
-        })
-      })
-
-      const data = await response.json()
-      if (data.success) {
-        loadCart()
-      }
-    } catch (error) {
-      console.error('Error clearing cart:', error)
+  const handleSelectItem = (id) => {
+    if (selectedItems.includes(id)) {
+      setSelectedItems(prev => prev.filter(itemId => itemId !== id))
+    } else {
+      setSelectedItems(prev => [...prev, id])
     }
   }
 
   const handleCheckout = () => {
-    // Kiểm tra đăng nhập
     if (!isAuthenticated) {
       alert('Vui lòng đăng nhập để tiến hành thanh toán')
-      navigate('/login')
+      navigate('/dang-nhap')
+      return
+    }
+
+    if (selectedItems.length === 0) {
+      alert('Vui lòng chọn sản phẩm để thanh toán')
       return
     }
     
-    // Thực hiện thanh toán
-    alert('Chức năng thanh toán đang được phát triển')
+    // Filter cart items to only include selected ones for checkout
+    // In a real app, you might pass selected items to checkout page via state or context
+    navigate('/checkout', { state: { selectedItems } })
   }
 
-  const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
-  const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0)
+  // Calculate totals based on SELECTED items
+  const selectedCartItems = cartItems.filter(item => {
+    if (!item.productId) return false
+    const id = item.productId._id || item.productId
+    return selectedItems.includes(id)
+  })
+
+  const totalPrice = selectedCartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+  const totalSelectedCount = selectedCartItems.length
 
   return (
-    <div className='cart-page'>
-      <div className='cart-header'>
-        <h1>Giỏ Hàng</h1>
-        <p>{totalItems} sản phẩm trong giỏ</p>
-      </div>
+    <div className='cart-page-new'>
+      <div className='cart-container-new'>
+        <h1 className='cart-title'>Giỏ hàng của bạn</h1>
 
-      <div className='cart-container'>
-        {cartItems.length === 0 ? (
-          <div className='empty-cart'>
-            <div className='empty-icon'>
-              <i className='fi fi-rr-shopping-cart'></i>
-            </div>
-            <h2>Giỏ hàng trống</h2>
-            <p>Hãy thêm sản phẩm yêu thích của bạn</p>
-            <Link to='/thuc-pham-chuc-nang' className='continue-shopping-btn'>
-              <i className='fi fi-rr-arrow-left'></i>
-              Tiếp tục mua sắm
-            </Link>
-          </div>
-        ) : (
-          <>
-            <div className='cart-content'>
-              <div className='cart-items'>
-                <div className='items-header'>
-                  <h2>Chi tiết đơn hàng</h2>
-                  {cartItems.length > 0 && (
-                    <button className='clear-cart-btn' onClick={clearCart}>
-                      <i className='fi fi-rr-trash'></i>
-                      Xóa tất cả
-                    </button>
-                  )}
-                </div>
+        <div className='cart-layout'>
+          {/* Left Column: Product List */}
+          <div className='cart-list-section'>
+            {/* Select All Header */}
+            {cartItems.length > 0 && (
+              <div className='cart-header-row'>
+                <label className='checkbox-label'>
+                  <input 
+                    type='checkbox' 
+                    checked={cartItems.length > 0 && selectedItems.length === cartItems.length}
+                    onChange={handleSelectAll}
+                  />
+                  <span>Chọn tất cả ({selectedItems.length}/{cartItems.length})</span>
+                </label>
+              </div>
+            )}
 
-                <div className='items-list'>
-                  {cartItems.map(item => (
-                    <div key={item._id || item.clientProductId || item.productId} className='cart-item'>
-                      <div className='item-image'>
+            {/* Product Items */}
+            {cartItems.length === 0 ? (
+              <div className='empty-cart-message'>
+                <p>Giỏ hàng của bạn đang trống</p>
+                <Link to='/thuc-pham-chuc-nang'>Mua sắm ngay</Link>
+              </div>
+            ) : (
+              <div className='cart-items-list'>
+                {cartItems.map(item => {
+                  if (!item.productId) return null
+                  const itemId = item.productId._id || item.productId
+                  return (
+                    <div key={itemId} className='cart-item-card'>
+                      <div className='item-checkbox'>
+                        <input 
+                          type='checkbox' 
+                          checked={selectedItems.includes(itemId)}
+                          onChange={() => handleSelectItem(itemId)}
+                        />
+                      </div>
+                      
+                      <div className='item-image-box'>
                         <img src={resolveImageSrc(item.image)} alt={item.name} />
                       </div>
 
-                      <div className='item-details'>
-                        <h3 className='item-name'>{item.name}</h3>
-                        <p className='item-price'>{item.price.toLocaleString('vi-VN')} ₫</p>
-                      </div>
+                      <div className='item-info-box'>
+                        <div className='item-main-info'>
+                          <h3 className='item-name'>{item.name}</h3>
+                          <p className='item-sku'>SKU: {item.sku || itemId.substring(0, 8).toUpperCase()}</p>
+                          <p className='item-price-highlight'>{item.price.toLocaleString('vi-VN')} ₫</p>
+                        </div>
 
-                      <div className='item-quantity'>
-                        <button 
-                          onClick={() => updateQuantity(item.productId, item.quantity - 1, item.clientProductId)}
-                          className='qty-btn'
-                        >
-                          <i className='fi fi-rr-minus'></i>
-                        </button>
-                        <input 
-                          type='number' 
-                          value={item.quantity}
-                          onChange={(e) => updateQuantity(item.productId, parseInt(e.target.value) || 1, item.clientProductId)}
-                          min='1'
-                        />
-                        <button 
-                          onClick={() => updateQuantity(item.productId, item.quantity + 1, item.clientProductId)}
-                          className='qty-btn'
-                        >
-                          <i className='fi fi-rr-plus'></i>
-                        </button>
-                      </div>
+                        <div className='item-actions'>
+                          <div className='quantity-control'>
+                            <button 
+                              onClick={() => updateQuantity(item.productId, item.quantity - 1, item.clientProductId)}
+                              disabled={item.quantity <= 1}
+                            >−</button>
+                            <input 
+                              type='text' 
+                              value={item.quantity} 
+                              readOnly 
+                            />
+                            <button 
+                              onClick={() => updateQuantity(item.productId, item.quantity + 1, item.clientProductId)}
+                            >+</button>
+                          </div>
+                          
+                          <div className='item-subtotal'>
+                            {(item.price * item.quantity).toLocaleString('vi-VN')} ₫
+                          </div>
 
-                      <div className='item-total'>
-                        {(item.price * item.quantity).toLocaleString('vi-VN')} ₫
+                          <button 
+                            className='delete-btn'
+                            onClick={() => removeItem(item.productId, item.clientProductId, item.name)}
+                          >
+                            <i className='fi fi-rr-trash'></i>
+                          </button>
+                        </div>
                       </div>
-
-                      <button 
-                        onClick={() => removeItem(item.productId, item.clientProductId)}
-                        className='remove-btn'
-                        title='Xóa sản phẩm'
-                      >
-                        <i className='fi fi-rr-trash'></i>
-                      </button>
                     </div>
-                  ))}
-                </div>
+                  )
+                })}
               </div>
+            )}
+          </div>
 
-              {/* Order Summary */}
-              <div className='order-summary'>
-                <h2>Tóm tắt đơn hàng</h2>
-
-                <div className='summary-row'>
-                  <span>Tổng tiền hàng:</span>
-                  <span>{totalPrice.toLocaleString('vi-VN')} ₫</span>
-                </div>
-
-                <div className='summary-row'>
-                  <span>Phí vận chuyển:</span>
-                  <span className='shipping-fee'>
-                    {totalPrice > 500000 ? 'Miễn phí' : '30,000 ₫'}
-                  </span>
-                </div>
-
-                <div className='summary-row'>
-                  <span>Giảm giá:</span>
-                  <span className='discount'>0 ₫</span>
-                </div>
-
-                <div className='summary-divider'></div>
-
-                <div className='summary-row total'>
-                  <span>Tổng cộng:</span>
-                  <span>
-                    {(totalPrice > 500000 ? totalPrice : totalPrice + 30000).toLocaleString('vi-VN')} ₫
-                  </span>
-                </div>
-
-                <button className='checkout-btn' onClick={handleCheckout}>
-                  <i className='fi fi-rr-credit-card'></i>
-                  Tiến hành thanh toán
-                </button>
-
-                <Link to='/thuc-pham-chuc-nang' className='continue-btn'>
-                  <i className='fi fi-rr-arrow-left'></i>
-                  Tiếp tục mua sắm
-                </Link>
-
-                <div className='benefits'>
-                  <p>
-                    <i className='fi fi-rr-truck'></i>
-                    Miễn phí vận chuyển cho đơn hàng trên 500,000 ₫
-                  </p>
-                  <p>
-                    <i className='fi fi-rr-shield-check'></i>
-                    Bảo vệ người mua 100%
-                  </p>
-                  <p>
-                    <i className='fi fi-rr-check'></i>
-                    Hàng chính hãng 100%
-                  </p>
-                </div>
+          {/* Right Column: Order Summary */}
+          <div className='cart-summary-section'>
+            <div className='summary-card'>
+              <h2>Tổng đơn hàng</h2>
+              
+              <div className='summary-row'>
+                <span>Tạm tính ({totalSelectedCount} sản phẩm):</span>
+                <span>{totalPrice.toLocaleString('vi-VN')} ₫</span>
               </div>
+              
+              <div className='summary-row'>
+                <span>Phí vận chuyển:</span>
+                <span>Miễn phí</span>
+              </div>
+              
+              <div className='summary-divider'></div>
+              
+              <div className='summary-row total'>
+                <span>Tổng cộng:</span>
+                <span className='total-price'>{totalPrice.toLocaleString('vi-VN')} ₫</span>
+              </div>
+              
+              <button className='checkout-button' onClick={handleCheckout}>
+                <i className='fi fi-rr-credit-card'></i> Thanh toán ({totalSelectedCount})
+              </button>
+              
+              <Link to='/thuc-pham-chuc-nang' className='continue-shopping-button'>
+                ← Tiếp tục mua sắm
+              </Link>
             </div>
-          </>
-        )}
+          </div>
+        </div>
       </div>
     </div>
   )

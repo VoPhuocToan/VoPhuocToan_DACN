@@ -216,6 +216,54 @@
   font-size: 0.9rem;
 }
 
+/* Best Selling Products Section */
+.best-selling-section {
+  padding: 3rem 0;
+  background-color: #fff;
+}
+
+.loading-products {
+  text-align: center;
+  padding: 3rem 0;
+  color: var(--color-primary);
+  font-size: 1.1rem;
+}
+
+.best-selling-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1.5rem;
+}
+
+@media (max-width: 1200px) {
+  .best-selling-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 992px) {
+  .best-selling-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .best-selling-section {
+    padding: 2rem 0;
+  }
+  
+  .best-selling-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .best-selling-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .categories-section {
   padding: 3rem 0;
   background-color: #f8f9fa;

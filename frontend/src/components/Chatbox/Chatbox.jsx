@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import './Chatbox.css'
+import aiIcon from '../../assets/ai-icon.png'
 
 const Chatbox = () => {
   const [isOpen, setIsOpen] = useState(false)
@@ -187,7 +188,7 @@ const Chatbox = () => {
           onClick={() => setIsOpen(true)}
           aria-label='Mở chat'
         >
-          <i className='fi fi-br-comment-dots'></i>
+          <img src={aiIcon} alt="AI" className="chatbox-icon-img" />
           <span className='chatbox-badge'>AI</span>
         </button>
       )}

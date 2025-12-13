@@ -25,7 +25,7 @@ export const AuthProvider = ({ children }) => {
     setIsLoading(false)
   }, [])
 
-  // Auto logout after 30 seconds of inactivity
+  // Auto logout after 1 minute of inactivity
   useEffect(() => {
     if (!token) return
 
@@ -37,7 +37,7 @@ export const AuthProvider = ({ children }) => {
         logout()
         alert('Phiên đăng nhập đã hết hạn do không hoạt động')
         window.location.href = '/login'
-      }, 30000) // 30 seconds
+      }, 60000) // 1 minute
     }
 
     const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click']

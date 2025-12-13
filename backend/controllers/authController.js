@@ -120,7 +120,10 @@ export const updateProfile = asyncHandler(async (req, res) => {
     name: req.body.name,
     email: req.body.email,
     phone: req.body.phone,
-    address: req.body.address
+    address: req.body.address,
+    city: req.body.city,
+    district: req.body.district,
+    ward: req.body.ward
   }
 
   // Remove undefined fields

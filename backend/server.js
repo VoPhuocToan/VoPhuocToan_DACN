@@ -14,19 +14,47 @@ import orderRoutes from './routes/orders.js'
 import categoryRoutes from './routes/categories.js'
 import cartRoutes from './routes/cart.js'
 import contactRoutes from './routes/contact.js'
+import promotionRoutes from './routes/promotions.js'
+import favoriteRoutes from './routes/favorites.js'
+import paymentRoutes from './routes/payment.js'
 
-// Connect to MongoDB (use connection string from .env)
+// Connect to MongoDB with better error handling
 const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/healthycare'
 
-mongoose.connect(MONGO_URI)
-  .then((conn) => {
-    console.log(`✅ MongoDB Connected: ${conn.connection.host}`)
-    console.log(`📊 Database: ${conn.connection.name}`)
-  })
-  .catch((error) => {
-    console.error('❌ MongoDB connection error:', error.message || error)
-    process.exit(1)
-  })
+const connectWithRetry = async (retries = 5) => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      console.log(`🔄 Attempting to connect to MongoDB... (Attempt ${i + 1}/${retries})`)
+      const conn = await mongoose.connect(MONGO_URI, {
+        serverSelectionTimeoutMS: 60000,
+        socketTimeoutMS: 75000,
+        maxPoolSize: 10,
+        minPoolSize: 2,
+      })
+      console.log(`✅ MongoDB Connected: ${conn.connection.host}`)
+      console.log(`📊 Database: ${conn.connection.name}`)
+      console.log(`📦 Connection ready state: ${conn.connection.readyState}`)
+      
+      return conn
+    } catch (error) {
+      console.error(`❌ MongoDB connection attempt ${i + 1} failed:`, error.message)
+      if (i === retries - 1) {
+        console.error('⚠️  All connection attempts failed. Please check:')
+        console.error('   1. Internet connection is stable')
+        console.error('   2. MongoDB Atlas IP whitelist includes your IP (or 0.0.0.0/0)')
+        console.error('   3. MongoDB URI in .env file is correct')
+        console.error('   4. MongoDB Atlas cluster is running')
+        console.error('🔴 Server will start but database operations will fail!')
+      } else {
+        console.log(`⏳ Waiting 3 seconds before retry...`)
+        await new Promise(resolve => setTimeout(resolve, 3000))
+      }
+    }
+  }
+}
+
+// Start connection
+connectWithRetry()
 
 const app = express()
 const PORT = process.env.PORT || 5000
@@ -84,6 +112,9 @@ app.use('/api/orders', orderRoutes)
 app.use('/api/categories', categoryRoutes)
 app.use('/api/cart', cartRoutes)
 app.use('/api/contact', contactRoutes)
+app.use('/api/promotions', promotionRoutes)
+app.use('/api/favorites', favoriteRoutes)
+app.use('/api/payment', paymentRoutes)
 
 // Error Handler Middleware (must be last)
 app.use(errorHandler)

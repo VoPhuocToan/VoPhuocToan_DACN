@@ -15,6 +15,7 @@ const AdminLayout = () => {
             <li><Link to='/admin/products'>📦 Sản phẩm</Link></li>
             <li><Link to='/admin/products/new'>➕ Thêm sản phẩm</Link></li>
             <li><Link to='/admin/categories'>📁 Danh mục</Link></li>
+            <li><Link to='/admin/orders'>🛒 Đơn hàng</Link></li>
           </ul>
         </nav>
       </aside>

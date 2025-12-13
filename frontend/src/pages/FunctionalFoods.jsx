@@ -18,6 +18,11 @@ const FunctionalFoods = () => {
       try {
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
         const res = await fetch(`${apiUrl}/api/products?pageSize=1000`)
+        
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`)
+        }
+        
         const data = await res.json()
         
         // API trả về { success, data: [...] }
@@ -25,27 +30,34 @@ const FunctionalFoods = () => {
                      Array.isArray(data?.products) ? data.products : 
                      Array.isArray(data) ? data : []
         
-        console.log('Fetched products:', list.length)
+        console.log('✅ Fetched products from database:', list.length)
         
         // Normalize to match ProductCard expectations
-        const normalized = list.map(p => ({
-          id: p._id || p.id,
-          name: p.name,
-          brand: p.brand,
-          price: p.price,
-          originalPrice: p.originalPrice,
-          image: p.image || (Array.isArray(p.images) ? p.images[0] : ''),
-          category: p.category,
-          description: p.description,
-          ingredients: p.ingredients,
-          usage: p.usage,
-          rating: typeof p.rating === 'number' ? p.rating : 0,
-          reviews: typeof p.numReviews === 'number' ? p.numReviews : 0,
-          inStock: p.inStock !== false
-        }))
+        const normalized = list.map(p => {
+          const stock = Number(p.stock) || 0
+          // Đảm bảo inStock sync với stock: nếu stock = 0 thì inStock = false
+          const inStock = stock > 0 && (p.inStock !== false)
+          return {
+            id: p._id || p.id,
+            name: p.name,
+            brand: p.brand,
+            price: p.price,
+            originalPrice: p.originalPrice,
+            image: p.image || (Array.isArray(p.images) ? p.images[0] : ''),
+            category: p.category,
+            description: p.description,
+            ingredients: p.ingredients,
+            usage: p.usage,
+            rating: typeof p.rating === 'number' ? p.rating : 0,
+            reviews: typeof p.numReviews === 'number' ? p.numReviews : 0,
+            inStock: inStock,
+            stock: stock
+          }
+        })
         setAllProducts(normalized)
       } catch (e) {
-        console.error('Fetch products error:', e)
+        console.error('❌ Error fetching products from API:', e.message)
+        console.error('Please check if backend server is running on port 5000')
         setAllProducts([])
       }
     }

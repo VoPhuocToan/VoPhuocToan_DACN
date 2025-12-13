@@ -51,6 +51,23 @@ export const addToCart = asyncHandler(async (req, res) => {
     }
   }
 
+  // If product exists in DB, check stock
+  if (product) {
+    if (!product.isActive) {
+      return res.status(400).json({
+        success: false,
+        message: 'Sản phẩm không còn hoạt động'
+      })
+    }
+
+    if (!product.inStock || product.stock === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Sản phẩm đã hết hàng'
+      })
+    }
+  }
+
   // If no product in DB, ensure we have productData from client
   if (!product && !productData) {
     return res.status(400).json({
@@ -69,22 +86,33 @@ export const addToCart = asyncHandler(async (req, res) => {
 
   // Check if item already in cart (match by productId if exists, otherwise by clientProductId or name)
   const existingItem = cart.items.find(item => {
-    if (product && item.productId && item.productId.toString() === product.id) return true
+    if (product && item.productId && item.productId.toString() === product._id.toString()) return true
     if (item.clientProductId && clientId && item.clientProductId === clientId) return true
     if (!product && productData && item.name === productData.name) return true
     return false
   })
 
+  const quantityToAdd = parseInt(quantity) || 1
+  const newQuantity = existingItem ? existingItem.quantity + quantityToAdd : quantityToAdd
+
+  // Check stock if product exists
+  if (product && newQuantity > product.stock) {
+    return res.status(400).json({
+      success: false,
+      message: `Số lượng vượt quá tồn kho. Chỉ còn ${product.stock} sản phẩm`
+    })
+  }
+
   if (existingItem) {
-    existingItem.quantity += parseInt(quantity)
+    existingItem.quantity = newQuantity
   } else {
     cart.items.push({
       productId: product ? product._id : null,
       clientProductId: clientId,
       name: product ? product.name : productData.name,
       price: product ? product.price : productData.price,
-      image: product ? product.image : productData.image,
-      quantity: parseInt(quantity)
+      image: product ? (product.image || (product.images && product.images[0])) : productData.image,
+      quantity: quantityToAdd
     })
   }
 

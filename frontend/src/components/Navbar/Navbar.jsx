@@ -212,15 +212,15 @@ const Navbar = () => {
                       <p className='user-email'>{user.email}</p>
                       {user.role === 'admin' && <span className='admin-badge'>👨‍💼 Admin</span>}
                     </div>
-                    <Link to='#' className='dropdown-item' onClick={() => setShowUserMenu(false)}>
+                    <Link to='/tai-khoan' className='dropdown-item' onClick={() => setShowUserMenu(false)}>
                       <i className='fi fi-rr-user'></i>
                       Tài khoản của tôi
                     </Link>
-                    <Link to='#' className='dropdown-item' onClick={() => setShowUserMenu(false)}>
+                    <Link to='/don-hang' className='dropdown-item' onClick={() => setShowUserMenu(false)}>
                       <i className='fi fi-rr-document'></i>
                       Đơn hàng của tôi
                     </Link>
-                    <Link to='#' className='dropdown-item' onClick={() => setShowUserMenu(false)}>
+                    <Link to='/yeu-thich' className='dropdown-item' onClick={() => setShowUserMenu(false)}>
                       <i className='fi fi-rr-heart'></i>
                       Sản phẩm yêu thích
                     </Link>
@@ -249,7 +249,7 @@ const Navbar = () => {
             )}
             
             <Link to='/gio-hang' className='action-link'>
-              <i className='fi fi-sr-shopping-cart action-icon'></i>
+              <i className='fi fi-br-shopping-cart action-icon'></i>
               <span className='action-text'>Giỏ hàng</span>
             </Link>
             <Link to='/lien-he' className='action-link'>

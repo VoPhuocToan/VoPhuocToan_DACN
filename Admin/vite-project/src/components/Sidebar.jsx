@@ -1,86 +1,105 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useStore } from '../context/StoreContext';
 import '../styles/Sidebar.css';
 
-const Sidebar = () => {
+const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   const { user, logout } = useStore();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
+  const isActive = (path) => {
+    if (path === '/') {
+      return location.pathname === '/';
+    }
+    return location.pathname.startsWith(path);
+  };
+
   return (
-    <div className="sidebar">
+    <div className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
       <div className="sidebar-header">
-        <h2>ADMIN PANEL</h2>
+        <div className="header-top">
+          {!isCollapsed && <h2>ADMIN PANEL</h2>}
+          <button className="toggle-btn" onClick={toggleSidebar}>
+            {isCollapsed ? '☰' : '◀'}
+          </button>
+        </div>
         <div className="user-info">
           <div className="user-avatar">
             <span className="avatar-icon">👤</span>
           </div>
-          <p className="user-name">{user?.name || 'Admin HealthyCare'}</p>
+          {!isCollapsed && <p className="user-name">{user?.name || 'Admin HealthyCare'}</p>}
         </div>
       </div>
 
       <nav className="sidebar-nav">
         <ul>
           <li>
-            <Link to="/" className="nav-link">
+            <Link to="/" className={`nav-link ${isActive('/') ? 'active' : ''}`} title={isCollapsed ? "Dashboard" : ""}>
               <span className="nav-icon">🏠</span>
-              <span>Dashboard</span>
+              {!isCollapsed && <span>Dashboard</span>}
             </Link>
           </li>
           <li>
-            <Link to="/products" className="nav-link">
+            <Link to="/orders" className={`nav-link ${isActive('/orders') ? 'active' : ''}`} title={isCollapsed ? "Quản lý đơn hàng" : ""}>
               <span className="nav-icon">🛒</span>
-              <span>Quản lý đơn hàng</span>
+              {!isCollapsed && <span>Quản lý đơn hàng</span>}
             </Link>
           </li>
           <li>
-            <Link to="/products" className="nav-link">
+            <Link to="/revenue" className={`nav-link ${isActive('/revenue') ? 'active' : ''}`} title={isCollapsed ? "Thống kê doanh thu" : ""}>
+              <span className="nav-icon">💰</span>
+              {!isCollapsed && <span>Thống kê doanh thu</span>}
+            </Link>
+          </li>
+          <li>
+            <Link to="/products" className={`nav-link ${isActive('/products') ? 'active' : ''}`} title={isCollapsed ? "Quản lý sản phẩm" : ""}>
               <span className="nav-icon">📦</span>
-              <span>Quản lý sản phẩm</span>
+              {!isCollapsed && <span>Quản lý sản phẩm</span>}
             </Link>
           </li>
           <li>
-            <Link to="/products/new" className="nav-link">
-              <span className="nav-icon">➕</span>
-              <span>Thêm sản phẩm</span>
-            </Link>
-          </li>
-          <li>
-            <Link to="/categories" className="nav-link">
+            <Link to="/categories" className={`nav-link ${isActive('/categories') ? 'active' : ''}`} title={isCollapsed ? "Danh mục" : ""}>
               <span className="nav-icon">🏷️</span>
-              <span>Quản lý khuyến mãi</span>
+              {!isCollapsed && <span>Danh mục</span>}
             </Link>
           </li>
           <li>
-            <Link to="/categories" className="nav-link">
-              <span className="nav-icon">✨</span>
-              <span>Thêm khuyến mãi</span>
-            </Link>
-          </li>
-          <li>
-            <Link to="/contact" className="nav-link">
+            <Link to="/users" className={`nav-link ${isActive('/users') ? 'active' : ''}`} title={isCollapsed ? "Quản lý người dùng" : ""}>
               <span className="nav-icon">👥</span>
-              <span>Quản lý người dùng</span>
+              {!isCollapsed && <span>Quản lý người dùng</span>}
             </Link>
           </li>
           <li>
-            <Link to="/contact" className="nav-link">
+            <Link to="/promotions" className={`nav-link ${isActive('/promotions') ? 'active' : ''}`} title={isCollapsed ? "Quản lý khuyến mãi" : ""}>
+              <span className="nav-icon">🎁</span>
+              {!isCollapsed && <span>Quản lý khuyến mãi</span>}
+            </Link>
+          </li>
+          <li>
+            <Link to="/comments" className={`nav-link ${isActive('/comments') ? 'active' : ''}`} title={isCollapsed ? "Quản lý bình luận" : ""}>
               <span className="nav-icon">💬</span>
-              <span>Quản lý bình luận</span>
+              {!isCollapsed && <span>Quản lý bình luận</span>}
+            </Link>
+          </li>
+          <li>
+            <Link to="/contact" className={`nav-link ${isActive('/contact') ? 'active' : ''}`} title={isCollapsed ? "Liên hệ" : ""}>
+              <span className="nav-icon">📧</span>
+              {!isCollapsed && <span>Liên hệ</span>}
             </Link>
           </li>
         </ul>
       </nav>
 
       <div className="sidebar-footer">
-        <button onClick={handleLogout} className="logout-btn">
+        <button onClick={handleLogout} className="logout-btn" title={isCollapsed ? "Đăng xuất" : ""}>
           <span className="logout-icon">🚪</span>
-          <span>Đăng xuất</span>
+          {!isCollapsed && <span>Đăng xuất</span>}
         </button>
       </div>
     </div>

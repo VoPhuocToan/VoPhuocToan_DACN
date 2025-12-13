@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useSearchParams, useNavigate, Link } from 'react-router-dom'
 import ProductCard from '../components/ProductCard/ProductCard'
 import './SearchResults.css'
 
@@ -37,21 +37,27 @@ const SearchResults = () => {
         
         if (data.success && Array.isArray(data.data)) {
           // Normalize products for ProductCard
-          const normalized = data.data.map(p => ({
-            id: p._id || p.id,
-            name: p.name,
-            brand: p.brand,
-            price: p.price,
-            originalPrice: p.originalPrice,
-            image: p.image || (Array.isArray(p.images) ? p.images[0] : ''),
-            category: p.category,
-            description: p.description,
-            ingredients: p.ingredients,
-            usage: p.usage,
-            rating: typeof p.rating === 'number' ? p.rating : 0,
-            reviews: typeof p.numReviews === 'number' ? p.numReviews : 0,
-            inStock: p.inStock !== false
-          }))
+          const normalized = data.data.map(p => {
+            const stock = Number(p.stock) || 0
+            // Đảm bảo inStock sync với stock: nếu stock = 0 thì inStock = false
+            const inStock = stock > 0 && (p.inStock !== false)
+            return {
+              id: p._id || p.id,
+              name: p.name,
+              brand: p.brand,
+              price: p.price,
+              originalPrice: p.originalPrice,
+              image: p.image || (Array.isArray(p.images) ? p.images[0] : ''),
+              category: p.category,
+              description: p.description,
+              ingredients: p.ingredients,
+              usage: p.usage,
+              rating: typeof p.rating === 'number' ? p.rating : 0,
+              reviews: typeof p.numReviews === 'number' ? p.numReviews : 0,
+              inStock: inStock,
+              stock: stock
+            }
+          })
           console.log('Normalized products:', normalized.length)
           setProducts(normalized)
         }

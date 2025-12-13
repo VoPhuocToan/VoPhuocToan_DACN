@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import ProductCard from '../components/ProductCard/ProductCard'
+import FlashSale from '../components/FlashSale/FlashSale'
 import './Home.css'
 
 // Import background images
@@ -13,6 +15,8 @@ const getImage = (filename) => {
 const Home = () => {
   const [currentMainSlide, setCurrentMainSlide] = useState(0)
   const [currentSmallSlide, setCurrentSmallSlide] = useState(0)
+  const [bestSellingProducts, setBestSellingProducts] = useState([])
+  const [loading, setLoading] = useState(true)
 
   // Main slider images
   const mainSlides = [
@@ -22,9 +26,8 @@ const Home = () => {
 
   // Small slider images
   const smallSlides = [
-    getImage('bg_nhỏ_1.jpg'),
-    getImage('bg_nhỏ_2.jpg'),
-    getImage('bg_nhỏ_3.png')
+    { image: getImage('bg_nhỏ_1.jpg'), link: '/thuc-pham-chuc-nang/69341ec10764a4c44c1015ea' },
+    { image: getImage('bg_nhỏ_3.png'), link: '/thuc-pham-chuc-nang/69341ec10764a4c44c1015ed' }
   ]
 
   // Auto slide for main banner
@@ -41,6 +44,52 @@ const Home = () => {
       setCurrentSmallSlide((prev) => (prev + 1) % smallSlides.length)
     }, 4000)
     return () => clearInterval(interval)
+  }, [])
+
+  // Fetch best selling products
+  useEffect(() => {
+    const fetchBestSellingProducts = async () => {
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+        const res = await fetch(`${apiUrl}/api/products?pageSize=100`)
+        const data = await res.json()
+        
+        const list = Array.isArray(data?.data) ? data.data : 
+                     Array.isArray(data?.products) ? data.products : 
+                     Array.isArray(data) ? data : []
+        
+        // Normalize and sort by reviews (best selling = most reviewed)
+        const normalized = list.map(p => {
+          const stock = Number(p.stock) || 0
+          // Đảm bảo inStock sync với stock: nếu stock = 0 thì inStock = false
+          const inStock = stock > 0 && (p.inStock !== false)
+          return {
+            id: p._id || p.id,
+            _id: p._id || p.id,
+            name: p.name,
+            brand: p.brand,
+            price: p.price,
+            originalPrice: p.originalPrice,
+            image: p.image || (Array.isArray(p.images) ? p.images[0] : ''),
+            category: p.category,
+            rating: typeof p.rating === 'number' ? p.rating : 0,
+            reviews: typeof p.numReviews === 'number' ? p.numReviews : 0,
+            inStock: inStock,
+            stock: stock
+          }
+        })
+        
+        // Sort by number of reviews (descending) and take top 5
+        const sorted = normalized.sort((a, b) => b.reviews - a.reviews).slice(0, 5)
+        setBestSellingProducts(sorted)
+        setLoading(false)
+      } catch (error) {
+        console.error('Error fetching best selling products:', error)
+        setLoading(false)
+      }
+    }
+    
+    fetchBestSellingProducts()
   }, [])
 
   const nextMainSlide = () => {
@@ -95,38 +144,35 @@ const Home = () => {
                 key={index}
                 className={`small-slide ${index === currentSmallSlide ? 'active' : ''}`}
               >
-                <img src={slide} alt={`Khuyến mãi ${index + 1}`} />
+                {slide.link ? (
+                  <Link to={slide.link}>
+                    <img src={slide.image} alt={`Khuyến mãi ${index + 1}`} />
+                  </Link>
+                ) : (
+                  <img src={slide.image} alt={`Khuyến mãi ${index + 1}`} />
+                )}
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Features */}
-      <section className='features'>
+      {/* Flash Sale Section */}
+      <FlashSale />
+
+      {/* Best Selling Products */}
+      <section className='best-selling-section'>
         <div className='container'>
-          <div className='feature-grid'>
-            <div className='feature-item'>
-              <div className='feature-icon'>✓</div>
-              <h3>Chính hãng 100%</h3>
-              <p>Cam kết sản phẩm chính hãng, có nguồn gốc xuất xứ rõ ràng</p>
+          <h2 className='section-title'>Sản phẩm bán chạy</h2>
+          {loading ? (
+            <div className='loading-products'>Đang tải...</div>
+          ) : (
+            <div className='best-selling-grid'>
+              {bestSellingProducts.map(product => (
+                <ProductCard key={product.id} product={product} />
+              ))}
             </div>
-            <div className='feature-item'>
-              <div className='feature-icon'>🚚</div>
-              <h3>Giao hàng nhanh</h3>
-              <p>Miễn phí vận chuyển cho đơn hàng trên 500.000đ</p>
-            </div>
-            <div className='feature-item'>
-              <div className='feature-icon'>💰</div>
-              <h3>Giá tốt nhất</h3>
-              <p>Giá cả cạnh tranh với nhiều chương trình khuyến mãi</p>
-            </div>
-            <div className='feature-item'>
-              <div className='feature-icon'>💬</div>
-              <h3>Tư vấn miễn phí</h3>
-              <p>Đội ngũ dược sĩ tư vấn chuyên nghiệp 24/7</p>
-            </div>
-          </div>
+          )}
         </div>
       </section>
 

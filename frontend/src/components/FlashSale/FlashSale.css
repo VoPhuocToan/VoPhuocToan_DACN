@@ -1,0 +1,246 @@
+.flash-sale-container {
+  background: white;
+  border-radius: 12px;
+  margin: 20px auto;
+  max-width: 1216px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.flash-sale-banner img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Timeline */
+.flash-sale-timeline {
+  display: flex;
+  background: #f0f8ff;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.timeline-item {
+  flex: 1;
+  text-align: center;
+  padding: 15px 10px;
+  cursor: pointer;
+  transition: all 0.3s;
+  border-bottom: 3px solid transparent;
+}
+
+.timeline-item.active {
+  background: #ffe4e4;
+  border-bottom-color: #d32f2f;
+}
+
+.timeline-time {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.timeline-status {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.timeline-item.active .timeline-status {
+  color: #d32f2f;
+}
+
+/* Header & Timer */
+.flash-sale-header {
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.countdown-timer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.timer-box {
+  background: #d32f2f;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+  min-width: 36px;
+  text-align: center;
+}
+
+.timer-colon {
+  color: #d32f2f;
+  font-weight: 700;
+}
+
+/* Products Grid */
+.flash-sale-products {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 15px;
+  padding: 0 20px 20px;
+}
+
+.flash-sale-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 10px;
+  position: relative;
+  transition: transform 0.2s, box-shadow 0.2s;
+  background: white;
+  display: flex;
+  flex-direction: column;
+}
+
+.flash-sale-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.discount-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: #d32f2f;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  z-index: 1;
+}
+
+.product-image-link {
+  display: block;
+  width: 100%;
+  padding-top: 100%; /* 1:1 Aspect Ratio */
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.product-image-link img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.product-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.product-name {
+  font-size: 0.9rem;
+  color: #333;
+  text-decoration: none;
+  margin-bottom: 8px;
+  line-height: 1.4;
+  height: 2.8em; /* 2 lines */
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.product-name:hover {
+  color: #0b77ff;
+}
+
+.price-box {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.sale-price {
+  color: #0b77ff;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.original-price-unit {
+  font-size: 0.8rem;
+  color: #999;
+}
+
+.original-price {
+  font-size: 0.9rem;
+  color: #999;
+  text-decoration: line-through;
+  margin-bottom: 8px;
+}
+
+.deal-tag {
+  background: #ff8a65;
+  color: white;
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 10px;
+  width: fit-content;
+}
+
+.fire-icon {
+  font-size: 0.9rem;
+}
+
+.buy-button {
+  display: block;
+  width: 100%;
+  padding: 8px;
+  background: #3b82f6;
+  color: white;
+  text-align: center;
+  text-decoration: none;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-top: auto;
+  transition: background 0.2s;
+}
+
+.buy-button:hover {
+  background: #2563eb;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .flash-sale-products {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .flash-sale-products {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .timeline-item {
+    padding: 10px 5px;
+  }
+  
+  .timeline-time {
+    font-size: 0.9rem;
+  }
+  
+  .timeline-status {
+    font-size: 0.8rem;
+  }
+}

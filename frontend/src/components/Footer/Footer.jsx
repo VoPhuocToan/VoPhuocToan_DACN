@@ -34,11 +34,11 @@ const Footer = () => {
           <h4 className='footer-title'>Sản phẩm</h4>
           <ul className='footer-links'>
             <li><Link to='/thuc-pham-chuc-nang'>Tất cả sản phẩm</Link></li>
-            <li><a href='#'>Vitamin & Khoáng chất</a></li>
-            <li><a href='#'>Hỗ trợ tiêu hóa</a></li>
-            <li><a href='#'>Hỗ trợ Tim mạch</a></li>
-            <li><a href='#'>Hỗ trợ Xương khớp</a></li>
-            <li><a href='#'>Hỗ trợ Làm đẹp</a></li>
+            <li><Link to='/thuc-pham-chuc-nang?category=Vitamin %26 Khoáng chất'>Vitamin & Khoáng chất</Link></li>
+            <li><Link to='/thuc-pham-chuc-nang?category=Hỗ trợ tiêu hóa'>Hỗ trợ tiêu hóa</Link></li>
+            <li><Link to='/thuc-pham-chuc-nang?category=Sức khỏe tim mạch'>Hỗ trợ Tim mạch</Link></li>
+            <li><Link to='/thuc-pham-chuc-nang?category=Hỗ trợ điều trị'>Hỗ trợ Xương khớp</Link></li>
+            <li><Link to='/thuc-pham-chuc-nang?category=Hỗ trợ làm đẹp'>Hỗ trợ Làm đẹp</Link></li>
           </ul>
         </div>
 
@@ -46,12 +46,11 @@ const Footer = () => {
         <div className='footer-section'>
           <h4 className='footer-title'>Hỗ trợ khách hàng</h4>
           <ul className='footer-links'>
-            <li><a href='/lien-he'>Liên hệ chúng tôi</a></li>
-            <li><a href='#'>Chính sách bảo mật</a></li>
-            <li><a href='#'>Điều khoản sử dụng</a></li>
-            <li><a href='#'>Hướng dẫn mua hàng</a></li>
-            <li><a href='#'>Chính sách đổi trả</a></li>
-            <li><a href='#'>Câu hỏi thường gặp</a></li>
+            <li><Link to='/lien-he'>Liên hệ chúng tôi</Link></li>
+            <li><Link to='/dieu-khoan-su-dung'>Điều khoản sử dụng</Link></li>
+            <li><Link to='/huong-dan-mua-hang'>Hướng dẫn mua hàng</Link></li>
+            <li><Link to='/chinh-sach-doi-tra'>Chính sách đổi trả</Link></li>
+            <li><Link to='/cau-hoi-thuong-gap'>Câu hỏi thường gặp</Link></li>
           </ul>
         </div>
 
