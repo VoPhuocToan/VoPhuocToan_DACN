@@ -20,6 +20,14 @@ export const getCart = asyncHandler(async (req, res) => {
   if (!cart) {
     cart = new Cart({ userId, items: [] })
     await cart.save()
+  } else {
+    // Clean up items where product no longer exists
+    const validItems = cart.items.filter(item => item.productId != null)
+    
+    if (validItems.length < cart.items.length) {
+      cart.items = validItems
+      await cart.save()
+    }
   }
 
   res.json({

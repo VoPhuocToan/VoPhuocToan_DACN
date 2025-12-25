@@ -9,7 +9,7 @@ export const StoreProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const API_URL = 'http://localhost:5000/api';
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
   // Initialize user and token from localStorage on mount
   useEffect(() => {
@@ -112,6 +112,36 @@ export const StoreProvider = ({ children }) => {
     setToken(null);
     setIsAuthenticated(false);
     localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminUser');
+  };
+
+  const fetchWithAuth = async (url, options = {}) => {
+    if (!token) return null;
+
+    const headers = {
+      ...options.headers,
+      'Authorization': `Bearer ${token}`
+    };
+
+    // Only set Content-Type to application/json if not already set and body is not FormData
+    if (!headers['Content-Type'] && !(options.body instanceof FormData)) {
+      headers['Content-Type'] = 'application/json';
+    }
+
+    try {
+      const response = await fetch(url, { ...options, headers });
+      
+      if (response.status === 401) {
+        console.log('[DEBUG] Token expired or invalid, logging out...');
+        logout();
+        return null;
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('[DEBUG] Fetch error:', error);
+      throw error;
+    }
   };
 
   const value = {
@@ -122,6 +152,7 @@ export const StoreProvider = ({ children }) => {
     error,
     login,
     logout,
+    fetchWithAuth,
     API_URL,
   };
 

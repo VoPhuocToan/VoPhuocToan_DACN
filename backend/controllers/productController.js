@@ -14,9 +14,17 @@ export const getProducts = asyncHandler(async (req, res) => {
   const maxPrice = req.query.maxPrice
   const sortBy = req.query.sortBy || 'createdAt'
   const sortOrder = req.query.sortOrder === 'desc' ? -1 : 1
+  const ids = req.query.ids
 
   // Build query
   const query = { isActive: true }
+  
+  if (ids) {
+    const idList = ids.split(',').filter(id => mongoose.Types.ObjectId.isValid(id))
+    if (idList.length > 0) {
+      query._id = { $in: idList }
+    }
+  }
   
   if (category && category !== 'Tất cả') {
     query.category = category

@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useStore } from '../context/StoreContext';
 import '../styles/PromotionForm.css';
 
 const PromotionForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const isEditMode = Boolean(id);
+  const { token, fetchWithAuth } = useStore();
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
   const [formData, setFormData] = useState({
     code: '',
@@ -18,27 +20,50 @@ const PromotionForm = () => {
     usageLimit: '',
     startDate: '',
     endDate: '',
-    isActive: true
+    isActive: true,
+    applicableProducts: []
   });
 
+  const [products, setProducts] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [loadingProducts, setLoadingProducts] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
+    fetchProducts();
     if (isEditMode) {
       fetchPromotion();
     }
   }, [id]);
 
+  const fetchProducts = async () => {
+    setLoadingProducts(true);
+    try {
+      // Use fetch directly or fetchWithAuth. Products are usually public or protected.
+      // Assuming public for now or fetchWithAuth handles it.
+      const response = await fetch(`${API_URL}/products?pageSize=1000`);
+      const data = await response.json();
+      if (data.success) {
+        setProducts(data.data);
+      } else {
+        console.error('Failed to load products:', data.message);
+      }
+    } catch (err) {
+      console.error('Error fetching products:', err);
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
+
   const fetchPromotion = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('adminToken');
-      const response = await axios.get(`http://localhost:5000/api/promotions/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await fetchWithAuth(`${API_URL}/promotions/${id}`);
+      if (!response) return;
       
-      const promotion = response.data.data;
+      const data = await response.json();
+      const promotion = data.data;
       
       // Helper to format date for datetime-local input (YYYY-MM-DDThh:mm)
       const formatDateForInput = (dateString) => {
@@ -59,7 +84,8 @@ const PromotionForm = () => {
         usageLimit: promotion.usageLimit || '',
         startDate: formatDateForInput(promotion.startDate),
         endDate: formatDateForInput(promotion.endDate),
-        isActive: promotion.isActive
+        isActive: promotion.isActive,
+        applicableProducts: promotion.applicableProducts || []
       });
     } catch (error) {
       console.error('Error fetching promotion:', error);
@@ -80,6 +106,47 @@ const PromotionForm = () => {
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
+  };
+
+  const handleProductToggle = (productId) => {
+    setFormData(prev => {
+      const currentProducts = Array.isArray(prev.applicableProducts) ? prev.applicableProducts : [];
+      const isSelected = currentProducts.includes(productId);
+      
+      if (isSelected) {
+        return {
+          ...prev,
+          applicableProducts: currentProducts.filter(id => id !== productId)
+        };
+      } else {
+        return {
+          ...prev,
+          applicableProducts: [...currentProducts, productId]
+        };
+      }
+    });
+  };
+
+  const handleSelectAll = () => {
+    const filteredProducts = products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    const filteredIds = filteredProducts.map(p => p._id);
+    
+    setFormData(prev => {
+      const currentProducts = Array.isArray(prev.applicableProducts) ? prev.applicableProducts : [];
+      const newSelection = [...new Set([...currentProducts, ...filteredIds])];
+      return { ...prev, applicableProducts: newSelection };
+    });
+  };
+
+  const handleDeselectAll = () => {
+    const filteredProducts = products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    const filteredIds = filteredProducts.map(p => p._id);
+    
+    setFormData(prev => {
+      const currentProducts = Array.isArray(prev.applicableProducts) ? prev.applicableProducts : [];
+      const newSelection = currentProducts.filter(id => !filteredIds.includes(id));
+      return { ...prev, applicableProducts: newSelection };
+    });
   };
 
   const validateForm = () => {
@@ -130,7 +197,6 @@ const PromotionForm = () => {
 
     try {
       setLoading(true);
-      const token = localStorage.getItem('adminToken');
       
       const submitData = {
         ...formData,
@@ -141,27 +207,31 @@ const PromotionForm = () => {
         usageLimit: Number(formData.usageLimit) || 0
       };
 
+      let response;
       if (isEditMode) {
-        await axios.put(
-          `http://localhost:5000/api/promotions/${id}`,
-          submitData,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        alert('Cập nhật khuyến mãi thành công!');
+        response = await fetchWithAuth(`${API_URL}/promotions/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify(submitData)
+        });
       } else {
-        await axios.post(
-          'http://localhost:5000/api/promotions',
-          submitData,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        alert('Tạo khuyến mãi thành công!');
+        response = await fetchWithAuth(`${API_URL}/promotions`, {
+          method: 'POST',
+          body: JSON.stringify(submitData)
+        });
       }
-      
-      navigate('/admin/promotions');
+
+      if (!response) return;
+
+      if (response.ok) {
+        alert(isEditMode ? 'Cập nhật khuyến mãi thành công!' : 'Tạo khuyến mãi thành công!');
+        navigate('/promotions');
+      } else {
+        const data = await response.json();
+        throw new Error(data.message || 'Có lỗi xảy ra');
+      }
     } catch (error) {
       console.error('Error saving promotion:', error);
-      const message = error.response?.data?.message || error.response?.data?.error || 'Không thể lưu khuyến mãi';
-      alert(message);
+      alert(error.message || 'Không thể lưu khuyến mãi');
     } finally {
       setLoading(false);
     }
@@ -175,7 +245,7 @@ const PromotionForm = () => {
     <div className="promotion-form-container">
       <div className="page-header">
         <h1>{isEditMode ? 'Chỉnh sửa khuyến mãi' : 'Thêm khuyến mãi mới'}</h1>
-        <button className="btn-back" onClick={() => navigate('/admin/promotions')}>
+        <button className="btn-back" onClick={() => navigate('/promotions')}>
           ← Quay lại
         </button>
       </div>
@@ -192,12 +262,12 @@ const PromotionForm = () => {
               name="code"
               value={formData.code}
               onChange={handleChange}
-              placeholder="VD: SUMMER2024"
+              placeholder="VD: SUMMER2024 hoặc FLASH_1212"
               className={errors.code ? 'error' : ''}
               disabled={isEditMode}
             />
             {errors.code && <span className="error-message">{errors.code}</span>}
-            <small>Mã sẽ tự động chuyển thành chữ in hoa</small>
+            <small>Mã sẽ tự động chuyển thành chữ in hoa. Để tạo Flash Sale, hãy bắt đầu mã bằng "FLASH_"</small>
           </div>
 
           {/* Description */}
@@ -328,6 +398,68 @@ const PromotionForm = () => {
               className={errors.endDate ? 'error' : ''}
             />
             {errors.endDate && <span className="error-message">{errors.endDate}</span>}
+          </div>
+
+          {/* Applicable Products */}
+          <div className="form-group full-width">
+            <label>Áp dụng cho sản phẩm</label>
+            <input 
+              type="text" 
+              placeholder="Tìm kiếm sản phẩm..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="search-input"
+              style={{ width: '100%', padding: '8px', marginBottom: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+            />
+            
+            <div style={{ marginBottom: '8px', display: 'flex', gap: '10px' }}>
+              <button 
+                type="button" 
+                onClick={handleSelectAll}
+                className="btn-small"
+                style={{ backgroundColor: '#e2e8f0', color: '#334155' }}
+              >
+                Chọn tất cả (theo lọc)
+              </button>
+              <button 
+                type="button" 
+                onClick={handleDeselectAll}
+                className="btn-small"
+                style={{ backgroundColor: '#fee2e2', color: '#dc2626' }}
+              >
+                Bỏ chọn tất cả (theo lọc)
+              </button>
+            </div>
+
+            <div className="product-selection-list">
+             {loadingProducts ? (
+                <div style={{padding: '10px', textAlign: 'center', color: '#666'}}>Đang tải sản phẩm...</div>
+             ) : products.length === 0 ? (
+                <div style={{padding: '10px', textAlign: 'center', color: '#666'}}>Không tìm thấy sản phẩm nào.</div>
+             ) : (
+                products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase())).map(product => (
+                   <div key={product._id} className="product-checkbox-item">
+                      <input 
+                         type="checkbox"
+                         id={`prod-${product._id}`}
+                         checked={Array.isArray(formData.applicableProducts) && formData.applicableProducts.includes(product._id)}
+                         onChange={() => handleProductToggle(product._id)}
+                      />
+                      <label htmlFor={`prod-${product._id}`}>
+                         {product.images && product.images[0] && (
+                           <img src={product.images[0]} alt="" className="mini-thumb" />
+                         )}
+                         <span>{product.name} - {product.price?.toLocaleString()}đ</span>
+                      </label>
+                   </div>
+                ))
+             )}
+            </div>
+            <small style={{ color: '#666', display: 'block', marginTop: '5px' }}>
+              {formData.applicableProducts?.length > 0 
+                ? `Đã chọn ${formData.applicableProducts.length} sản phẩm` 
+                : 'Để trống nếu áp dụng cho tất cả sản phẩm'}
+            </small>
           </div>
 
           {/* Is Active */}

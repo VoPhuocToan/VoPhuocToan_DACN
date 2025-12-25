@@ -176,17 +176,6 @@
   cursor: pointer;
 }
 
-.forgot-password {
-  color: var(--color-primary);
-  text-decoration: none;
-  font-weight: 600;
-  transition: color 0.3s ease;
-}
-
-.forgot-password:hover {
-  color: var(--color-primary-dark);
-}
-
 /* Login Button */
 .login-btn {
   padding: 14px 20px;

@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { useStore } from '../context/StoreContext';
 import '../styles/PromotionList.css';
 
 const PromotionList = () => {
   const navigate = useNavigate();
+  const { token, fetchWithAuth } = useStore();
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
   const [promotions, setPromotions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -28,11 +30,11 @@ const PromotionList = () => {
   const fetchPromotions = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('adminToken');
-      const response = await axios.get('http://localhost:5000/api/promotions', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setPromotions(response.data.data || []);
+      const response = await fetchWithAuth(`${API_URL}/promotions`);
+      if (!response) return;
+      
+      const data = await response.json();
+      setPromotions(data.data || []);
     } catch (error) {
       console.error('Error fetching promotions:', error);
       alert('Không thể tải danh sách khuyến mãi');
@@ -109,33 +111,34 @@ const PromotionList = () => {
     if (!window.confirm('Bạn có chắc muốn xóa mã khuyến mãi này?')) return;
 
     try {
-      const token = localStorage.getItem('adminToken');
-      await axios.delete(`http://localhost:5000/api/promotions/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
+      const response = await fetchWithAuth(`${API_URL}/promotions/${id}`, {
+        method: 'DELETE'
       });
+      
+      if (!response) return;
+
       alert('Xóa thành công!');
       fetchPromotions();
     } catch (error) {
       console.error('Error deleting promotion:', error);
-      const message = error.response?.data?.message || error.response?.data?.error || 'Không thể xóa khuyến mãi';
-      alert(message);
+      alert('Không thể xóa khuyến mãi');
     }
   };
 
   const handleToggleActive = async (promotion) => {
     try {
-      const token = localStorage.getItem('adminToken');
-      await axios.put(
-        `http://localhost:5000/api/promotions/${promotion._id}`,
-        { ...promotion, isActive: !promotion.isActive },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await fetchWithAuth(`${API_URL}/promotions/${promotion._id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ ...promotion, isActive: !promotion.isActive })
+      });
+
+      if (!response) return;
+
       alert('Cập nhật trạng thái thành công!');
       fetchPromotions();
     } catch (error) {
       console.error('Error toggling promotion:', error);
-      const message = error.response?.data?.message || error.response?.data?.error || 'Không thể cập nhật trạng thái';
-      alert(message);
+      alert('Không thể cập nhật trạng thái');
     }
   };
 
@@ -182,7 +185,7 @@ const PromotionList = () => {
     <div className="promotion-management">
       <div className="page-header">
         <h1>Quản lý Khuyến mãi</h1>
-        <button className="btn-add" onClick={() => navigate('/admin/promotions/new')}>
+        <button className="btn-add" onClick={() => navigate('/promotions/new')}>
           ➕ Thêm khuyến mãi
         </button>
       </div>
@@ -326,7 +329,7 @@ const PromotionList = () => {
                         </button>
                         <button
                           className="btn-edit"
-                          onClick={() => navigate(`/admin/promotions/edit/${promotion._id}`)}
+                          onClick={() => navigate(`/promotions/edit/${promotion._id}`)}
                           title="Chỉnh sửa"
                         >
                           <i className="fi fi-rr-edit"></i>

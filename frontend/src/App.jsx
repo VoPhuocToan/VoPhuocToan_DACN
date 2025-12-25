@@ -24,7 +24,17 @@ import ShoppingGuide from './pages/ShoppingGuide'
 import ReturnPolicy from './pages/ReturnPolicy'
 import FAQ from './pages/FAQ'
 import './App.css'
-import { AdminRoute, AdminLayout, AdminDashboard, AdminProductList, AdminProductForm, AdminCategoryList, AdminOrderList } from './admin'
+import { 
+  AdminRoute, 
+  AdminLayout, 
+  AdminDashboard, 
+  AdminProductList, 
+  AdminProductForm, 
+  AdminCategoryList, 
+  AdminOrderList,
+  AdminPromotionList,
+  AdminPromotionForm
+} from './admin'
 
 const App = () => {
   // Handle back-to-top button visibility
@@ -43,7 +53,7 @@ const App = () => {
 
   return (
     <AuthProvider>
-      <Router>
+      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <div className='app'>
           <Navbar />
           <main className='app-main'>
@@ -84,6 +94,9 @@ const App = () => {
                 <Route path='products/:id' element={<AdminProductForm />} />
                 <Route path='categories' element={<AdminCategoryList />} />
                 <Route path='orders' element={<AdminOrderList />} />
+                <Route path='promotions' element={<AdminPromotionList />} />
+                <Route path='promotions/new' element={<AdminPromotionForm />} />
+                <Route path='promotions/:id' element={<AdminPromotionForm />} />
               </Route>
             </Routes>
           </main>

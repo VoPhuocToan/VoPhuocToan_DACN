@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import '../styles/Dashboard.css'
 
 const Dashboard = () => {
-  const { token, API_URL } = useStore()
+  const { token, API_URL, fetchWithAuth } = useStore()
   const navigate = useNavigate()
   const [stats, setStats] = useState({
     totalProducts: 0,
@@ -27,13 +27,10 @@ const Dashboard = () => {
       const [productsRes, categoriesRes, ordersStatsRes] = await Promise.all([
         fetch(`${API_URL}/products?pageSize=1000`),
         fetch(`${API_URL}/categories`),
-        fetch(`${API_URL}/orders/stats`, {
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        })
+        fetchWithAuth(`${API_URL}/orders/stats`)
       ])
+
+      if (!ordersStatsRes) return; // Auth failed
 
       const productsData = await productsRes.json()
       const categoriesData = await categoriesRes.json()

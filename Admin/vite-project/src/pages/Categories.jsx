@@ -3,7 +3,7 @@ import { useStore } from '../context/StoreContext'
 import '../styles/Categories.css'
 
 const Categories = () => {
-  const { token, API_URL } = useStore()
+  const { token, API_URL, fetchWithAuth } = useStore()
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -41,14 +41,13 @@ const Categories = () => {
     }
 
     try {
-      const res = await fetch(`${API_URL}/categories`, {
+      const res = await fetchWithAuth(`${API_URL}/categories`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
         body: JSON.stringify(newCategory)
       })
+      
+      if (!res) return;
+
       const data = await res.json()
       if (data.success) {
         fetchCategories()
@@ -66,10 +65,12 @@ const Categories = () => {
   const handleDeleteCategory = async (id) => {
     if (!window.confirm('Bạn có chắc muốn xóa danh mục này?')) return
     try {
-      const res = await fetch(`${API_URL}/categories/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+      const res = await fetchWithAuth(`${API_URL}/categories/${id}`, {
+        method: 'DELETE'
       })
+      
+      if (!res) return;
+
       const data = await res.json()
       if (data.success) {
         fetchCategories()

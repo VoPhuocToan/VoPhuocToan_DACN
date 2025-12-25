@@ -160,9 +160,6 @@ const Login = () => {
                 <input type='checkbox' disabled={isLoading} />
                 <span>Nhớ tôi</span>
               </label>
-              <Link to='#' className='forgot-password'>
-                Quên mật khẩu?
-              </Link>
             </div>
 
             <button

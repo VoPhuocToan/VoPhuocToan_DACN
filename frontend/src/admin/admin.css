@@ -48,6 +48,35 @@
 .stat-icon.revenue { background: #8b5cf6; }
 .stat-content h3 { margin: 0 0 4px 0; font-size: 14px; color: #6b7280; }
 .stat-value { margin: 0 0 4px 0; font-size: 24px; font-weight: 700; }
+
+/* Product Selection List */
+.product-selection-list {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 8px;
+  margin-top: 8px;
+}
+.product-checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid #eee;
+}
+.product-checkbox-item:last-child {
+  border-bottom: none;
+}
+.product-checkbox-item .mini-thumb {
+  width: 30px;
+  height: 30px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+.search-input {
+  margin-bottom: 8px;
+}
 .stat-label { font-size: 12px; color: #9ca3af; }
 
 .admin-section { margin-top: 40px; }

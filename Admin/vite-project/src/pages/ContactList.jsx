@@ -5,7 +5,8 @@ import '../styles/Contact.css'
 
 const ContactList = () => {
   const navigate = useNavigate()
-  const { token } = useStore()
+  const { token, fetchWithAuth } = useStore()
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
   const [contacts, setContacts] = useState([])
   const [loading, setLoading] = useState(true)
   const [filterStatus, setFilterStatus] = useState('all')
@@ -25,12 +26,9 @@ const ContactList = () => {
     const fetchContacts = async () => {
       try {
         setLoading(true)
-        const response = await fetch('http://localhost:5000/api/contact', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        })
+        const response = await fetchWithAuth(`${API_URL}/contact`)
+
+        if (!response) return;
 
         if (!response.ok) {
           throw new Error('Không thể lấy danh sách liên hệ')
@@ -40,23 +38,15 @@ const ContactList = () => {
         setContacts(data.data || [])
 
         // Fetch stats
-        const statsResponse = await fetch(
-          'http://localhost:5000/api/contact/stats/count',
-          {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          }
-        )
+        const statsResponse = await fetchWithAuth(`${API_URL}/contact/stats/count`)
 
-        if (statsResponse.ok) {
+        if (statsResponse && statsResponse.ok) {
           const statsData = await statsResponse.json()
           setStats(statsData.data || {})
         }
       } catch (error) {
         console.error('Lỗi khi lấy danh sách liên hệ:', error)
-        alert('Không thể lấy danh sách liên hệ: ' + error.message)
+        // alert('Không thể lấy danh sách liên hệ: ' + error.message)
       } finally {
         setLoading(false)
       }
@@ -71,13 +61,11 @@ const ContactList = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:5000/api/contact/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+      const response = await fetchWithAuth(`${API_URL}/contact/${id}`, {
+        method: 'DELETE'
       })
+
+      if (!response) return;
 
       if (!response.ok) {
         throw new Error('Không thể xóa liên hệ')

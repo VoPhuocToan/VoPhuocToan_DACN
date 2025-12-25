@@ -147,7 +147,9 @@ const Checkout = () => {
       const data = await response.json()
 
       if (data.success && data.data.items) {
-        setCartItems(data.data.items)
+        // Filter out items where productId is null (deleted products)
+        const validItems = data.data.items.filter(item => item.productId)
+        setCartItems(validItems)
       } else {
         setCartItems([])
       }
@@ -542,40 +544,6 @@ const Checkout = () => {
                     <div>
                       <strong>Thanh toán PayOS</strong>
                       <small>Thanh toán qua cổng PayOS</small>
-                    </div>
-                  </span>
-                </label>
-
-                <label className='payment-option'>
-                  <input
-                    type='radio'
-                    name='paymentMethod'
-                    value='momo'
-                    checked={formData.paymentMethod === 'momo'}
-                    onChange={handleInputChange}
-                  />
-                  <span className='payment-label'>
-                    <i className='fi fi-rr-smartphone'></i>
-                    <div>
-                      <strong>Ví MoMo</strong>
-                      <small>Thanh toán qua ứng dụng MoMo</small>
-                    </div>
-                  </span>
-                </label>
-
-                <label className='payment-option'>
-                  <input
-                    type='radio'
-                    name='paymentMethod'
-                    value='vnpay'
-                    checked={formData.paymentMethod === 'vnpay'}
-                    onChange={handleInputChange}
-                  />
-                  <span className='payment-label'>
-                    <i className='fi fi-rr-credit-card'></i>
-                    <div>
-                      <strong>VNPay</strong>
-                      <small>Thanh toán qua cổng thanh toán VNPay</small>
                     </div>
                   </span>
                 </label>

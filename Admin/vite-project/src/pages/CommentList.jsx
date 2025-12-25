@@ -1,23 +1,22 @@
 import { useState, useEffect } from 'react';
+import { useStore } from '../context/StoreContext';
 import '../styles/CommentList.css';
 
 const CommentList = () => {
+  const { token, fetchWithAuth } = useStore();
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState('');
 
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
   const fetchComments = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
-      const res = await fetch(`${apiUrl}/api/products/admin/reviews`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const res = await fetchWithAuth(`${API_URL}/products/admin/reviews`);
+      if (!res) return;
+      
       const data = await res.json();
       if (data.success) {
         setComments(data.data);
@@ -37,13 +36,11 @@ const CommentList = () => {
     if (!window.confirm('Bạn có chắc muốn xóa bình luận này?')) return;
 
     try {
-      const token = localStorage.getItem('adminToken');
-      const res = await fetch(`${apiUrl}/api/products/${productId}/reviews/${reviewId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const res = await fetchWithAuth(`${API_URL}/products/${productId}/reviews/${reviewId}`, {
+        method: 'DELETE'
       });
+      
+      if (!res) return;
       
       if (res.ok) {
         alert('Đã xóa bình luận');
@@ -60,15 +57,12 @@ const CommentList = () => {
     if (!replyText.trim()) return;
 
     try {
-      const token = localStorage.getItem('adminToken');
-      const res = await fetch(`${apiUrl}/api/products/${productId}/reviews/${reviewId}/reply`, {
+      const res = await fetchWithAuth(`${API_URL}/products/${productId}/reviews/${reviewId}/reply`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
         body: JSON.stringify({ comment: replyText })
       });
+
+      if (!res) return;
 
       if (res.ok) {
         alert('Đã trả lời bình luận');

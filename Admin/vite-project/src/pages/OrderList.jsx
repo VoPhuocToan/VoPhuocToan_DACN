@@ -3,7 +3,7 @@ import { useStore } from '../context/StoreContext'
 import '../styles/OrderList.css'
 
 const OrderList = () => {
-  const { token, API_URL } = useStore()
+  const { token, API_URL, fetchWithAuth } = useStore()
   const [orders, setOrders] = useState([])
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -36,12 +36,9 @@ const OrderList = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch(`${API_URL}/orders/stats`, {
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      })
+      const response = await fetchWithAuth(`${API_URL}/orders/stats`)
+      if (!response) return;
+      
       const data = await response.json()
       if (data.success) {
         setStats(data.data)
@@ -59,12 +56,9 @@ const OrderList = () => {
       if (periodFilter !== 'all') url += `&period=${periodFilter}`
       if (categoryFilter !== 'all') url += `&category=${categoryFilter}`
       
-      const response = await fetch(url, {
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      })
+      const response = await fetchWithAuth(url)
+      if (!response) return;
+
       const data = await response.json()
       if (data.success) {
         setOrders(data.data || [])
@@ -78,15 +72,13 @@ const OrderList = () => {
 
   const handleStatusChange = async (orderId, newStatus) => {
     try {
-      const response = await fetch(`${API_URL}/orders/${orderId}/status`, {
+      const response = await fetchWithAuth(`${API_URL}/orders/${orderId}/status`, {
         method: 'PUT',
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify({ status: newStatus })
       });
       
+      if (!response) return;
+
       const data = await response.json();
       if (data.success) {
         fetchOrders();

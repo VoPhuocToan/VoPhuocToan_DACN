@@ -6,7 +6,7 @@ import '../styles/ProductForm.css'
 const ProductForm = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { token, API_URL } = useStore()
+  const { token, API_URL, fetchWithAuth } = useStore()
   const isEdit = !!id
 
   // 8 danh mục mặc định cho sản phẩm thực phẩm chức năng
@@ -56,7 +56,13 @@ const ProductForm = () => {
         }
         setForm(productData)
         // Set existing images as previews
-        setImagePreviews(productData.images.map(img => `${API_URL.replace('/api', '')}${img}`))
+        setImagePreviews(productData.images.map(img => {
+          if (img.startsWith('http')) return img
+          const baseUrl = API_URL.replace(/\/api$/, '')
+          const cleanPath = img.startsWith('/') ? img.slice(1) : img
+          if (cleanPath.startsWith('uploads/')) return `${baseUrl}/${cleanPath}`
+          return `${baseUrl}/uploads/${cleanPath}`
+        }))
       } else {
         setError(data.message || 'Không thể tải sản phẩm')
       }
@@ -149,14 +155,12 @@ const ProductForm = () => {
         })
       }
 
-      const res = await fetch(`${API_URL}/products${isEdit ? `/${id}` : ''}`, {
+      const res = await fetchWithAuth(`${API_URL}/products${isEdit ? `/${id}` : ''}`, {
         method: isEdit ? 'PUT' : 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-          // Don't set Content-Type, let browser set it with boundary for FormData
-        },
         body: formData
       })
+      
+      if (!res) return;
 
       const data = await res.json()
       if (data.success) {

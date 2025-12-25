@@ -4,7 +4,7 @@ import { useStore } from '../context/StoreContext'
 import '../styles/Products.css'
 
 const ProductList = () => {
-  const { token, API_URL } = useStore()
+  const { token, API_URL, fetchWithAuth } = useStore()
   const [products, setProducts] = useState([])
   const [filteredProducts, setFilteredProducts] = useState([])
   const [categories, setCategories] = useState([])
@@ -28,6 +28,20 @@ const ProductList = () => {
   // Detail modal
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [showDetailModal, setShowDetailModal] = useState(false)
+
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return '/placeholder.jpg'
+    if (imagePath.startsWith('http')) return imagePath
+    
+    // Remove /api from the end of API_URL if present
+    const baseUrl = API_URL.replace(/\/api$/, '')
+    const cleanPath = imagePath.startsWith('/') ? imagePath.slice(1) : imagePath
+    
+    if (cleanPath.startsWith('uploads/')) {
+      return `${baseUrl}/${cleanPath}`
+    }
+    return `${baseUrl}/uploads/${cleanPath}`
+  }
 
   const fetchProducts = async () => {
     setLoading(true)
@@ -122,10 +136,12 @@ const ProductList = () => {
   const handleDelete = async (id) => {
     if (!window.confirm('Bạn có chắc muốn xóa sản phẩm này?')) return
     try {
-      const res = await fetch(`${API_URL}/products/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+      const res = await fetchWithAuth(`${API_URL}/products/${id}`, {
+        method: 'DELETE'
       })
+      
+      if (!res) return;
+
       const data = await res.json()
       if (data.success) {
         fetchProducts()
@@ -337,7 +353,7 @@ const ProductList = () => {
                       <td>
                         <div className='product-cell'>
                           <img
-                            src={prod.images?.[0] || prod.image || '/placeholder.jpg'}
+                            src={getImageUrl(prod.images?.[0] || prod.image)}
                             alt={prod.name}
                             className='product-thumb'
                             onError={(e) => e.target.src = '/placeholder.jpg'}
@@ -422,7 +438,7 @@ const ProductList = () => {
                 <div key={prod._id} className='product-card'>
                   <div className='card-image'>
                     <img
-                      src={prod.images?.[0] || prod.image || '/placeholder.jpg'}
+                      src={getImageUrl(prod.images?.[0] || prod.image)}
                       alt={prod.name}
                       onError={(e) => e.target.src = '/placeholder.jpg'}
                     />

@@ -8,7 +8,7 @@ import { format, subDays, subWeeks, subMonths, subYears, startOfDay, endOfDay } 
 import '../styles/Revenue.css';
 
 const Revenue = () => {
-  const { token, API_URL } = useStore();
+  const { token, API_URL, fetchWithAuth } = useStore();
   const [loading, setLoading] = useState(true);
   const [revenueData, setRevenueData] = useState(null);
   const [filterType, setFilterType] = useState('month'); // day, week, month, year, custom
@@ -37,12 +37,8 @@ const Revenue = () => {
         url += `&startDate=${startDate}&endDate=${endDate}`;
       }
 
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await fetchWithAuth(url);
+      if (!response) return;
 
       const data = await response.json();
       if (data.success) {

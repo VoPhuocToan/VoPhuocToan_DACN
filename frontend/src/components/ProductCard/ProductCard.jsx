@@ -149,7 +149,7 @@ const ProductCard = ({ product }) => {
     // Kiểm tra đăng nhập
     if (!isAuthenticated) {
       alert('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng')
-      navigate('/login')
+      navigate('/dang-nhap')
       return
     }
     

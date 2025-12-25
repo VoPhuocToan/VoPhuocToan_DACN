@@ -8,8 +8,10 @@ const images = import.meta.glob('../../assets/*.{jpg,jpeg,png,gif,webp}', { eage
 
 const FlashSale = () => {
   const [products, setProducts] = useState([])
-  const [timeLeft, setTimeLeft] = useState({ hours: 7, minutes: 11, seconds: 26 })
+  const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 })
   const [activeTab, setActiveTab] = useState(0)
+  const [flashSales, setFlashSales] = useState([])
+  const [loading, setLoading] = useState(true)
 
   // Helper to resolve image source
   const resolveImageSrc = (imgStr) => {
@@ -31,58 +33,128 @@ const FlashSale = () => {
     return imgStr
   }
 
-  // Mock timeline data
-  const timeline = [
-    { time: '08:00 - 22:00', date: '12/12', status: 'Đang diễn ra' },
-    { time: '08:00 - 22:00', date: '13/12', status: 'Sắp diễn ra' },
-    { time: '10:00 - 13:00', date: '13/12', status: 'Sắp diễn ra' },
-    { time: '18:00 - 21:00', date: '13/12', status: 'Sắp diễn ra' },
-    { time: '08:00 - 22:00', date: '14/12', status: 'Sắp diễn ra' }
-  ]
+  const formatTime = (num) => num.toString().padStart(2, '0')
+
+  // Fetch Flash Sales
+  useEffect(() => {
+    const fetchFlashSales = async () => {
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+        const res = await fetch(`${apiUrl}/api/promotions?pageSize=100`)
+        const data = await res.json()
+
+        if (data.success) {
+          const now = new Date()
+          // Filter for active and upcoming flash sales
+          const validSales = data.data.filter(p => 
+            p.isActive && 
+            new Date(p.endDate) > now && 
+            (p.code.toUpperCase().includes('FLASH') || p.description.toLowerCase().includes('flash sale'))
+          ).sort((a, b) => new Date(a.startDate) - new Date(b.startDate))
+
+          setFlashSales(validSales)
+          
+          // Find active sale index
+          const activeIndex = validSales.findIndex(p => {
+            const start = new Date(p.startDate)
+            const end = new Date(p.endDate)
+            return now >= start && now <= end
+          })
+
+          if (activeIndex !== -1) {
+            setActiveTab(activeIndex)
+          } else {
+            setActiveTab(0)
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching flash sales:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchFlashSales()
+  }, [])
 
   // Countdown timer logic
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev.seconds > 0) {
-          return { ...prev, seconds: prev.seconds - 1 }
-        } else if (prev.minutes > 0) {
-          return { ...prev, minutes: prev.minutes - 1, seconds: 59 }
-        } else if (prev.hours > 0) {
-          return { ...prev, hours: prev.hours - 1, minutes: 59, seconds: 59 }
-        }
-        return prev
-      })
-    }, 1000)
-    return () => clearInterval(timer)
-  }, [])
+    if (flashSales.length === 0) return
 
-  // Fetch random products for flash sale
+    const calculateTimeLeft = () => {
+      const activeSale = flashSales[activeTab]
+      if (!activeSale) return
+
+      const now = new Date()
+      const end = new Date(activeSale.endDate)
+      
+      let diff = end - now
+      
+      if (diff > 0) {
+        const hours = Math.floor(diff / (1000 * 60 * 60))
+        const minutes = Math.floor((diff / 1000 / 60) % 60)
+        const seconds = Math.floor((diff / 1000) % 60)
+        setTimeLeft({ hours, minutes, seconds })
+      } else {
+        setTimeLeft({ hours: 0, minutes: 0, seconds: 0 })
+      }
+    }
+
+    calculateTimeLeft()
+    const timer = setInterval(calculateTimeLeft, 1000)
+    return () => clearInterval(timer)
+  }, [activeTab, flashSales])
+
+  // Fetch products for the active flash sale
   useEffect(() => {
     const fetchProducts = async () => {
+      if (flashSales.length === 0) return
+
+      const activeSale = flashSales[activeTab]
+      if (!activeSale) return
+
       try {
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
-        const res = await fetch(`${apiUrl}/api/products?pageSize=6`)
-        const data = await res.json()
+        let flashSaleProducts = []
+
+        // Check if the promotion has specific products selected
+        if (activeSale.applicableProducts && activeSale.applicableProducts.length > 0) {
+           // Fetch products by IDs
+           const ids = activeSale.applicableProducts.join(',')
+           const res = await fetch(`${apiUrl}/api/products?ids=${ids}&pageSize=100`)
+           const data = await res.json()
+           
+           if (data.success) {
+             flashSaleProducts = data.data
+           }
+        } else {
+           // Fallback: Fetch random products
+           const res = await fetch(`${apiUrl}/api/products?pageSize=6`)
+           const data = await res.json()
+           if (data.success) {
+             flashSaleProducts = data.data
+           }
+        }
         
-        if (data.success) {
-          // Add fake discount data and normalize image
-          const flashSaleProducts = data.data.map(p => ({
+        if (flashSaleProducts.length > 0) {
+          const discountValue = activeSale.discountValue || 0
+          
+          const formattedProducts = flashSaleProducts.map(p => ({
             ...p,
             image: p.image || (Array.isArray(p.images) && p.images.length > 0 ? p.images[0] : 'https://placehold.co/300x300?text=No+Image'),
-            discount: 22,
-            salePrice: Math.round(p.price * 0.78 / 1000) * 1000 // 22% off
+            discount: discountValue,
+            salePrice: Math.round(p.price * (100 - discountValue) / 100 / 1000) * 1000 
           }))
-          setProducts(flashSaleProducts)
+          setProducts(formattedProducts)
         }
       } catch (error) {
         console.error('Error fetching flash sale products:', error)
       }
     }
     fetchProducts()
-  }, [])
+  }, [activeTab, flashSales])
 
-  const formatTime = (num) => num.toString().padStart(2, '0')
+  if (loading) return null
+  if (flashSales.length === 0) return null
 
   return (
     <div className="flash-sale-container">
@@ -91,16 +163,29 @@ const FlashSale = () => {
       </div>
 
       <div className="flash-sale-timeline">
-        {timeline.map((slot, index) => (
-          <div 
-            key={index} 
-            className={`timeline-item ${index === activeTab ? 'active' : ''}`}
-            onClick={() => setActiveTab(index)}
-          >
-            <div className="timeline-time">{slot.time}, {slot.date}</div>
-            <div className="timeline-status">{slot.status}</div>
-          </div>
-        ))}
+        {flashSales.map((sale, index) => {
+            const start = new Date(sale.startDate)
+            const end = new Date(sale.endDate)
+            const now = new Date()
+            
+            let status = 'Sắp diễn ra'
+            if (now >= start && now <= end) status = 'Đang diễn ra'
+            
+            const timeStr = `${formatTime(start.getHours())}:${formatTime(start.getMinutes())} - ${formatTime(end.getHours())}:${formatTime(end.getMinutes())}`
+            const dateStr = `${formatTime(start.getDate())}/${formatTime(start.getMonth() + 1)}`
+
+            return (
+              <div 
+                key={sale._id} 
+                className={`timeline-item ${index === activeTab ? 'active' : ''}`}
+                onClick={() => setActiveTab(index)}
+              >
+                <div className="timeline-time">{timeStr}</div>
+                <div className="timeline-date">{dateStr}</div>
+                <div className="timeline-status">{status}</div>
+              </div>
+            )
+        })}
       </div>
 
       <div className="flash-sale-header">
@@ -130,14 +215,6 @@ const FlashSale = () => {
                 <span className="original-price-unit">/ Hộp</span>
               </div>
               <div className="original-price">{product.price.toLocaleString('vi-VN')}đ</div>
-              
-              <div className="deal-tag">
-                <span className="fire-icon">🔥</span> Ưu đãi giá sốc
-              </div>
-              
-              <Link to={`/thuc-pham-chuc-nang/${product._id}`} className="buy-button">
-                Chọn mua
-              </Link>
             </div>
           </div>
         ))}

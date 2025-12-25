@@ -38,6 +38,13 @@
   font-weight: 700;
   font-size: 1.1rem;
   color: #333;
+  margin-bottom: 2px;
+}
+
+.timeline-date {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #555;
   margin-bottom: 4px;
 }
 
@@ -85,7 +92,7 @@
 /* Products Grid */
 .flash-sale-products {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 15px;
   padding: 0 20px 20px;
 }
@@ -110,10 +117,10 @@
   position: absolute;
   top: 10px;
   left: 10px;
-  background: #d32f2f;
+  background: #ef4444;
   color: white;
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: 2px 8px;
+  border-radius: 12px;
   font-size: 0.8rem;
   font-weight: 700;
   z-index: 1;
@@ -143,7 +150,8 @@
 }
 
 .product-name {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+  font-weight: 600;
   color: #333;
   text-decoration: none;
   margin-bottom: 8px;
@@ -181,43 +189,7 @@
   font-size: 0.9rem;
   color: #999;
   text-decoration: line-through;
-  margin-bottom: 8px;
-}
-
-.deal-tag {
-  background: #ff8a65;
-  color: white;
-  font-size: 0.75rem;
-  padding: 2px 8px;
-  border-radius: 10px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-bottom: 10px;
-  width: fit-content;
-}
-
-.fire-icon {
-  font-size: 0.9rem;
-}
-
-.buy-button {
-  display: block;
-  width: 100%;
-  padding: 8px;
-  background: #3b82f6;
-  color: white;
-  text-align: center;
-  text-decoration: none;
-  border-radius: 20px;
-  font-weight: 600;
-  font-size: 0.9rem;
-  margin-top: auto;
-  transition: background 0.2s;
-}
-
-.buy-button:hover {
-  background: #2563eb;
+  margin-bottom: 0;
 }
 
 /* Responsive */

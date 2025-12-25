@@ -6,7 +6,8 @@ import '../styles/Contact.css'
 const ContactDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { token } = useStore()
+  const { token, fetchWithAuth } = useStore()
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
   const [contact, setContact] = useState(null)
   const [loading, setLoading] = useState(true)
   const [reply, setReply] = useState('')
@@ -21,15 +22,9 @@ const ContactDetail = () => {
     const fetchContact = async () => {
       try {
         setLoading(true)
-        const response = await fetch(
-          `http://localhost:5000/api/contact/${id}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          }
-        )
+        const response = await fetchWithAuth(`${API_URL}/contact/${id}`)
+
+        if (!response) return;
 
         if (!response.ok) {
           throw new Error('Không thể lấy thông tin liên hệ')
@@ -59,21 +54,12 @@ const ContactDetail = () => {
 
     try {
       setIsSubmitting(true)
-      const response = await fetch(
-        `http://localhost:5000/api/contact/${id}/reply`,
-        {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ reply: reply.trim() })
-        }
-      )
+      const response = await fetchWithAuth(`${API_URL}/contact/${id}/reply`, {
+        method: 'PUT',
+        body: JSON.stringify({ reply: reply.trim() })
+      })
 
-      if (!response.ok) {
-        throw new Error('Không thể gửi trả lời')
-      }
+      if (!response) return;
 
       const data = await response.json()
       setContact(data.data)
@@ -92,21 +78,11 @@ const ContactDetail = () => {
     }
 
     try {
-      const response = await fetch(
-        `http://localhost:5000/api/contact/${id}/close`,
-        {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      )
+      const response = await fetchWithAuth(`${API_URL}/contact/${id}/close`, {
+        method: 'PUT'
+      })
 
-      if (!response.ok) {
-        throw new Error('Không thể đóng liên hệ')
-      }
-
+      if (!response) return;
       const data = await response.json()
       setContact(data.data)
       alert('Đóng liên hệ thành công')
@@ -122,17 +98,11 @@ const ContactDetail = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:5000/api/contact/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+      const response = await fetchWithAuth(`${API_URL}/contact/${id}`, {
+        method: 'DELETE'
       })
 
-      if (!response.ok) {
-        throw new Error('Không thể xóa liên hệ')
-      }
+      if (!response) return;
 
       alert('Xóa liên hệ thành công')
       navigate('/contact')

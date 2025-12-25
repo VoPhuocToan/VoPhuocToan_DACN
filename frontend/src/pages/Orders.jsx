@@ -69,7 +69,17 @@ const Orders = () => {
       const token = localStorage.getItem('token')
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
       
-      const response = await fetch(`${apiUrl}/api/products/${reviewModal.product.product._id}/reviews`, {
+      // Handle both populated object and ID string cases
+      const productData = reviewModal.product.product
+      const productId = productData?._id || productData
+
+      if (!productId) {
+        alert('Lỗi: Không tìm thấy thông tin sản phẩm')
+        setSubmittingReview(false)
+        return
+      }
+      
+      const response = await fetch(`${apiUrl}/api/products/${productId}/reviews`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -386,7 +396,7 @@ const Orders = () => {
                           {(item.price * item.quantity).toLocaleString('vi-VN')} ₫
                         </span>
                       </div>
-                      {selectedOrder.status === 'delivered' && (
+                      {selectedOrder.status === 'delivered' && item.product && (
                         <button 
                           className="btn-review-product"
                           onClick={() => handleOpenReview(item)}
@@ -465,7 +475,7 @@ const Orders = () => {
             </div>
             <div className="modal-body">
               <div className="product-review-info">
-                <h4>{reviewModal.productName}</h4>
+                <h4>{reviewModal.product?.name}</h4>
               </div>
               
               <div className="rating-select">

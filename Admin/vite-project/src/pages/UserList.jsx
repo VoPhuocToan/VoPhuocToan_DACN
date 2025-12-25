@@ -3,7 +3,7 @@ import { useStore } from '../context/StoreContext'
 import '../styles/Users.css'
 
 const UserList = () => {
-  const { token, API_URL } = useStore()
+  const { token, API_URL, fetchWithAuth } = useStore()
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -33,12 +33,9 @@ const UserList = () => {
       if (roleFilter) url += `&role=${roleFilter}`
       if (statusFilter) url += `&isActive=${statusFilter}`
 
-      const res = await fetch(url, {
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      })
+      const res = await fetchWithAuth(url)
+      if (!res) return;
+
       const data = await res.json()
       if (data.success) {
         setUsers(data.data)
@@ -106,14 +103,13 @@ const UserList = () => {
   const handleToggleStatus = async (user) => {
     if (!window.confirm(`Bạn có chắc muốn ${user.isActive ? 'khóa' : 'mở khóa'} tài khoản này?`)) return
     try {
-      const res = await fetch(`${API_URL}/users/${user._id}`, {
+      const res = await fetchWithAuth(`${API_URL}/users/${user._id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
         body: JSON.stringify({ isActive: !user.isActive })
       })
+      
+      if (!res) return;
+
       const data = await res.json()
       if (data.success) {
         fetchUsers()
@@ -129,10 +125,12 @@ const UserList = () => {
   const handleDeleteUser = async (user) => {
     if (!window.confirm('Bạn có chắc muốn xóa người dùng này? Hành động này không thể hoàn tác!')) return
     try {
-      const res = await fetch(`${API_URL}/users/${user._id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+      const res = await fetchWithAuth(`${API_URL}/users/${user._id}`, {
+        method: 'DELETE'
       })
+      
+      if (!res) return;
+
       const data = await res.json()
       if (data.success) {
         fetchUsers()
