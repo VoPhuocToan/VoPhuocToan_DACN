@@ -363,6 +363,14 @@ export const cancelOrder = asyncHandler(async (req, res) => {
     })
   }
 
+  // Check payment method - PayOS orders cannot be cancelled by user
+  if (order.paymentMethod === 'payos') {
+    return res.status(400).json({
+      success: false,
+      message: 'Đơn hàng thanh toán chuyển khoản (PayOS) không thể tự hủy. Vui lòng liên hệ bộ phận chăm sóc khách hàng để được hỗ trợ.'
+    })
+  }
+
   // Only allow cancellation when order is pending
   if (order.status !== 'pending') {
     return res.status(400).json({

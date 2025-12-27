@@ -26,6 +26,7 @@ const OAuthCallback = () => {
         const data = await res.json()
         if (res.ok && data.success) {
           localStorage.setItem('user', JSON.stringify(data.data))
+          localStorage.setItem('userId', data.data._id)
           window.dispatchEvent(new Event('userLogin'))
           navigate('/')
         } else {

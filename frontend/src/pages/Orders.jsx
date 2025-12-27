@@ -313,8 +313,8 @@ const Orders = () => {
                     </div>
                   </div>
 
-                  {/* Cancel button - only show for pending orders */}
-                  {order.status === 'pending' && (
+                  {/* Cancel button - only show for pending orders and not PayOS */}
+                  {order.status === 'pending' && order.paymentMethod !== 'payos' && (
                     <div className="order-actions">
                       <button 
                         className="cancel-order-btn"
@@ -449,8 +449,8 @@ const Orders = () => {
                 </div>
               </div>
 
-              {/* Cancel Order Button - only show for pending orders */}
-              {selectedOrder.status === 'pending' && (
+              {/* Cancel Order Button - only show for pending orders and not PayOS */}
+              {selectedOrder.status === 'pending' && selectedOrder.paymentMethod !== 'payos' && (
                 <div className="detail-actions">
                   <button 
                     className="cancel-order-btn-detail"

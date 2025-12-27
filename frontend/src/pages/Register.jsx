@@ -95,6 +95,7 @@ const Register = () => {
       if (response.ok && data.success) {
         // Save token & user info
         localStorage.setItem('token', data.data.token)
+        localStorage.setItem('userId', data.data._id)
         localStorage.setItem('user', JSON.stringify({
           _id: data.data._id,
           name: data.data.name,

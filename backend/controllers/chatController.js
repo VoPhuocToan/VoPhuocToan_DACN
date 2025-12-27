@@ -1,5 +1,6 @@
 import OpenAI from 'openai'
 import asyncHandler from '../utils/asyncHandler.js'
+import Product from '../models/Product.js'
 
 // @desc    Chat with AI
 // @route   POST /api/chat
@@ -35,33 +36,46 @@ export const chatWithAI = asyncHandler(async (req, res) => {
       apiKey: apiKey
     })
 
-    const systemPrompt = `Bạn là AI trợ lý chuyên tư vấn về THỰC PHẨM CHỨC NĂNG cho nhà thuốc HealthyCare.
+    const systemPrompt = `
+Bạn là AI trợ lý tư vấn THỰC PHẨM CHỨC NĂNG cho nhà thuốc HealthyCare.
+
+NHIỆM VỤ:
+- Tư vấn sản phẩm đúng nhu cầu sức khỏe
+- Khi người dùng có ý định MUA hoặc TÌM SẢN PHẨM → phân tích nhu cầu
 
 QUY TẮC QUAN TRỌNG:
-1. CHỈ trả lời các câu hỏi liên quan đến:
-   - Thực phẩm chức năng, thực phẩm bảo vệ sức khỏe
-   - Vitamin, khoáng chất, bổ sung dinh dưỡng
-   - Công dụng, cách sử dụng, liều lượng sản phẩm
-   - Tư vấn chọn sản phẩm phù hợp với nhu cầu sức khỏe
-   - Sản phẩm hỗ trợ: tiêu hóa, tim mạch, xương khớp, não bộ, làm đẹp, sinh lý, nội tiết tố
+- Nếu người dùng hỏi "mua gì", "dùng gì", "có thuốc gì", "tư vấn cho tôi" -> BẮT BUỘC TRẢ VỀ JSON.
+- KHÔNG trả lời bằng lời dẫn khi trả về JSON. Chỉ trả về JSON thuần túy.
 
-2. TỪ CHỐI lịch sự các câu hỏi KHÔNG liên quan đến thực phẩm chức năng như:
-   - Câu hỏi về thời tiết, tin tức, giải trí, thể thao
-   - Câu hỏi về lịch sử, địa lý, văn hóa
-   - Câu hỏi về công nghệ, lập trình, kỹ thuật
-   - Câu hỏi cá nhân, đời tư
-   - Bất kỳ chủ đề nào KHÔNG liên quan đến thực phẩm chức năng/sức khỏe
+CÁCH TRẢ LỜI:
+1. Nếu là câu hỏi thông tin chung (không hỏi mua) → trả lời bình thường (text)
+2. Nếu là câu hỏi mua / gợi ý sản phẩm → CHỈ trả về JSON theo mẫu:
 
-3. Cách từ chối:
-   - Lịch sự, thân thiện: "Xin lỗi, tôi là AI chuyên tư vấn về thực phẩm chức năng của HealthyCare. Tôi chỉ có thể hỗ trợ bạn về các sản phẩm thực phẩm chức năng, vitamin, khoáng chất và các vấn đề sức khỏe liên quan."
-   - Gợi ý chuyển hướng: "Bạn có câu hỏi nào về thực phẩm chức năng không? Tôi có thể tư vấn về vitamin, khoáng chất, hoặc các sản phẩm hỗ trợ sức khỏe."
+{
+  "intent": "suggest_product",
+  "muc_dich": "Mục đích sử dụng (ngắn gọn)",
+  "doi_tuong": "Đối tượng sử dụng",
+  "van_de_suc_khoe": "Từ khóa chính (ví dụ: Xương khớp, Gan, Mắt, Não, Tim mạch, Vitamin, Đề kháng, Da, Tóc...)",
+  "tu_khoa": ["keyword1", "keyword2"]
+}
 
-4. Phong cách trả lời:
-   - Chuyên nghiệp, thân thiện, dễ hiểu
-   - Ngắn gọn, súc tích (tối đa 500 từ)
-   - Luôn nhắc nhở người dùng tham khảo ý kiến bác sĩ/dược sĩ khi cần
+VÍ DỤ:
+User: "đau lưng mua gì"
+AI:
+{
+  "intent": "suggest_product",
+  "muc_dich": "Giảm đau lưng",
+  "doi_tuong": "Người lớn",
+  "van_de_suc_khoe": "Xương khớp",
+  "tu_khoa": ["đau lưng", "xương khớp", "glucosamine"]
+}
 
-Hãy tuân thủ nghiêm ngặt các quy tắc trên.`
+LƯU Ý:
+- "van_de_suc_khoe" nên dùng các từ khóa chung như: Xương khớp, Gan, Mắt, Não, Tim mạch, Vitamin, Đề kháng, Da, Tóc... để dễ tìm kiếm trong cơ sở dữ liệu.
+- "tu_khoa": Liệt kê 3-5 từ khóa quan trọng nhất để tìm kiếm sản phẩm.
+- KHÔNG tự bịa tên sản phẩm
+- KHÔNG tư vấn ngoài lĩnh vực thực phẩm chức năng
+`
 
     const completion = await openai.chat.completions.create({
       messages: [
@@ -78,13 +92,89 @@ Hãy tuân thủ nghiêm ngặt các quy tắc trên.`
     console.log('✅ OpenAI response received')
     console.log('Response length:', assistantMessage.length)
 
+    let aiResponse = null
+    let suggestProducts = []
+    let displayContent = assistantMessage
+
+    // 1. Try to parse the whole message as JSON
+    try {
+      aiResponse = JSON.parse(assistantMessage)
+      displayContent = 'Tôi đã tìm thấy một số sản phẩm phù hợp với nhu cầu của bạn:'
+    } catch (e) {
+      // 2. If failed, try to extract JSON from text
+      const jsonMatch = assistantMessage.match(/\{[\s\S]*\}/)
+      if (jsonMatch) {
+        try {
+          const jsonStr = jsonMatch[0]
+          aiResponse = JSON.parse(jsonStr)
+          
+          // Remove the JSON part from the message to show only text
+          displayContent = assistantMessage.replace(jsonStr, '').trim()
+          if (!displayContent) {
+            displayContent = 'Tôi đã tìm thấy một số sản phẩm phù hợp với nhu cầu của bạn:'
+          }
+        } catch (parseError) {
+          console.log('❌ Failed to parse extracted JSON:', parseError.message)
+        }
+      }
+    }
+
+    if (aiResponse?.intent === 'suggest_product') {
+      const { muc_dich, doi_tuong, van_de_suc_khoe, tu_khoa } = aiResponse
+
+      console.log('🔍 AI Intent: suggest_product')
+      console.log('🔍 AI Data:', aiResponse)
+
+      // Build query conditions
+      const orConditions = []
+      
+      // Helper to add regex conditions for multiple fields
+      const addCondition = (term, fields) => {
+        if (term) {
+          fields.forEach(field => {
+            orConditions.push({ [field]: { $regex: term, $options: 'i' } })
+          })
+        }
+      }
+
+      addCondition(muc_dich, ['category', 'name', 'description'])
+      addCondition(doi_tuong, ['description', 'usage', 'name'])
+      addCondition(van_de_suc_khoe, ['description', 'usage', 'ingredients', 'name'])
+
+      if (tu_khoa && Array.isArray(tu_khoa)) {
+        tu_khoa.forEach(kw => {
+           addCondition(kw, ['name', 'description', 'category', 'usage', 'ingredients'])
+        })
+      }
+
+      console.log('🔍 Query Conditions:', JSON.stringify(orConditions, null, 2))
+
+      // Fallback if no conditions match (though regex usually matches something or empty string matches all)
+      // If all fields are empty, we might return random products or none.
+      // But let's stick to the logic.
+      
+      if (orConditions.length > 0) {
+          suggestProducts = await Product.find({
+            $or: orConditions
+          }).limit(5)
+          console.log('🔍 Found products:', suggestProducts.length)
+      }
+    }
+
     res.json({
       success: true,
       data: {
         role: 'assistant',
-        content: assistantMessage
+        content: displayContent,
+        products: suggestProducts.map(p => ({
+          id: p._id,
+          name: p.name,
+          price: p.price,
+          image: p.image
+        }))
       }
     })
+
   } catch (error) {
     console.error('❌ OpenAI Error:')
     console.error('Error message:', error.message)

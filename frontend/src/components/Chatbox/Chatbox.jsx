@@ -1,8 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
 import './Chatbox.css'
 import aiIcon from '../../assets/ai-icon.png'
 
+// Import all images from assets folder
+const images = import.meta.glob('../../assets/*.{jpg,jpeg,png,gif,webp}', { eager: true, import: 'default' })
+
 const Chatbox = () => {
+  const navigate = useNavigate()
+  const { isAuthenticated, user } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState([
     {
@@ -28,6 +35,49 @@ const Chatbox = () => {
       inputRef.current.focus()
     }
   }, [isOpen])
+
+  const addToCart = async (product) => {
+    if (!isAuthenticated) {
+      alert('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng')
+      setIsOpen(false)
+      navigate('/dang-nhap')
+      return
+    }
+    
+    try {
+      const userId = user?._id || localStorage.getItem('userId')
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+      
+      const payload = {
+        userId: userId,
+        quantity: 1,
+        productId: product.id,
+        clientProductId: String(product.id),
+        productData: {
+          name: product.name,
+          price: product.price,
+          image: product.image
+        }
+      }
+
+      const response = await fetch(`${apiUrl}/api/cart/add`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+
+      const data = await response.json()
+      
+      if (data.success) {
+        alert('Đã thêm sản phẩm vào giỏ hàng')
+      } else {
+        alert(data.message || 'Không thể thêm vào giỏ hàng')
+      }
+    } catch (err) {
+      console.error('Add to cart error:', err)
+      alert('Lỗi khi thêm vào giỏ hàng')
+    }
+  }
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return
@@ -76,7 +126,8 @@ const Chatbox = () => {
       if (data.success && data.data) {
         const assistantMessage = {
           role: data.data.role,
-          content: data.data.content
+          content: data.data.content,
+          products: data.data.products
         }
         setMessages(prev => [...prev, assistantMessage])
       } else {
@@ -115,6 +166,30 @@ const Chatbox = () => {
     }
   }
 
+  const resolveImageSrc = (img) => {
+    if (!img) return ''
+    const imgStr = String(img)
+    
+    // If it's already a full URL, return it
+    if (imgStr.startsWith('http://') || imgStr.startsWith('https://')) {
+      return imgStr
+    }
+    
+    // If it's a server upload path (starts with /uploads), prepend API URL
+    if (imgStr.startsWith('/uploads')) {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+      return `${apiUrl}${imgStr}`
+    }
+    
+    // Look for the image in our imported images (local assets)
+    const imagePath = `../../assets/${imgStr}`
+    if (images[imagePath]) {
+      return images[imagePath]
+    }
+    
+    return imgStr
+  }
+
   return (
     <div className={`chatbox-wrapper ${isOpen ? 'open' : ''}`}>
       {isOpen ? (
@@ -144,6 +219,26 @@ const Chatbox = () => {
               >
                 <div className='message-content'>
                   {message.content}
+                  {message.products && message.products.length > 0 && (
+                    <div className="chat-products">
+                      {message.products.map(p => (
+                        <div key={p.id} className="chat-product-card">
+                          <img src={resolveImageSrc(p.image)} alt={p.name} />
+                          <div className="chat-product-info">
+                            <h4>{p.name}</h4>
+                            <p>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p.price)}</p>
+                            <div className="chat-product-actions">
+                                <button onClick={() => {
+                                  setIsOpen(false)
+                                  navigate(`/thuc-pham-chuc-nang/${p.id}`)
+                                }}>Xem</button>
+                                <button onClick={() => addToCart(p)}>Mua ngay</button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

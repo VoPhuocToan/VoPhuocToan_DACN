@@ -224,7 +224,7 @@ export const handlePayOSReturn = asyncHandler(async (req, res) => {
       order.paymentResult.status = 'success';
       await order.save();
 
-      return res.redirect(`${process.env.FRONTEND_URL}/payment/success?orderId=${order._id}`);
+      return res.redirect(`${process.env.FRONTEND_URL}/orders`);
     }
 
     res.redirect(`${process.env.FRONTEND_URL}/orders`);

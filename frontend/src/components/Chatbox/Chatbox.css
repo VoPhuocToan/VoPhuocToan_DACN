@@ -311,3 +311,80 @@
   }
 }
 
+
+/* Product Cards in Chat */
+.chat-products {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.chat-product-card {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  gap: 10px;
+  border: 1px solid #eee;
+}
+
+.chat-product-card img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.chat-product-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.chat-product-info h4 {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #333;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.chat-product-info p {
+  margin: 5px 0;
+  font-weight: bold;
+  color: var(--color-primary);
+  font-size: 0.9rem;
+}
+
+.chat-product-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.chat-product-actions button {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.chat-product-actions button:first-child {
+  background: #e9ecef;
+  color: #333;
+}
+
+.chat-product-actions button:last-child {
+  background: var(--color-primary);
+  color: white;
+}
+
+.chat-product-actions button:hover {
+  opacity: 0.9;
+}
+
