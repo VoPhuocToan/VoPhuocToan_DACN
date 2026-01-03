@@ -1,5 +1,6 @@
 import Order from '../models/Order.js'
 import Product from '../models/Product.js'
+import Promotion from '../models/Promotion.js'
 import asyncHandler from '../utils/asyncHandler.js'
 
 // @desc    Create new order
@@ -12,7 +13,9 @@ export const createOrder = asyncHandler(async (req, res) => {
     paymentMethod,
     itemsPrice,
     shippingPrice,
-    totalPrice
+    totalPrice,
+    promotionCode,
+    discountAmount
   } = req.body
 
   if (!orderItems || orderItems.length === 0) {
@@ -20,6 +23,32 @@ export const createOrder = asyncHandler(async (req, res) => {
       success: false,
       message: 'Không có sản phẩm trong đơn hàng'
     })
+  }
+
+  // Handle Promotion
+  let promotionId = null;
+  if (promotionCode) {
+    const promotion = await Promotion.findOne({ code: promotionCode.toUpperCase(), isActive: true });
+    
+    if (promotion) {
+      // Check date
+      const now = new Date();
+      if (now < new Date(promotion.startDate) || now > new Date(promotion.endDate)) {
+         return res.status(400).json({ success: false, message: 'Mã khuyến mãi không trong thời gian áp dụng' });
+      }
+
+      // Check usage limit
+      if (promotion.usageLimit !== null && promotion.usedCount >= promotion.usageLimit) {
+         return res.status(400).json({ success: false, message: 'Mã khuyến mãi đã hết lượt sử dụng' });
+      }
+
+      // Increment usedCount
+      promotion.usedCount = (promotion.usedCount || 0) + 1;
+      await promotion.save();
+      promotionId = promotion._id;
+    } else {
+        return res.status(400).json({ success: false, message: 'Mã khuyến mãi không hợp lệ' });
+    }
   }
 
   // Update product stock
@@ -54,6 +83,8 @@ export const createOrder = asyncHandler(async (req, res) => {
     itemsPrice,
     shippingPrice,
     totalPrice,
+    promotion: promotionId,
+    discountAmount: discountAmount || 0,
     // Set isPaid based on payment method
     // COD and PayOS are not paid immediately upon order creation
     isPaid: !['cod', 'payos'].includes(paymentMethod),
@@ -254,6 +285,29 @@ export const getOrderStats = asyncHandler(async (req, res) => {
   const deliveredOrders = await Order.countDocuments({ status: 'delivered' })
   const cancelledOrders = await Order.countDocuments({ status: 'cancelled' })
 
+  // Calculate today's revenue
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const todayRevenueData = await Order.aggregate([
+    {
+      $match: {
+        createdAt: { $gte: today },
+        status: { $ne: 'cancelled' }
+      }
+    },
+    {
+      $group: {
+        _id: null,
+        todayRevenue: { $sum: '$totalPrice' },
+        count: { $sum: 1 }
+      }
+    }
+  ])
+
+  const todayRevenue = todayRevenueData.length > 0 ? todayRevenueData[0].todayRevenue : 0
+  const todayOrdersCount = todayRevenueData.length > 0 ? todayRevenueData[0].count : 0
+
   // Calculate total revenue (only from delivered orders for accurate revenue)
   const revenueData = await Order.aggregate([
     {
@@ -295,6 +349,33 @@ export const getOrderStats = asyncHandler(async (req, res) => {
     }
   ])
 
+  // Get revenue by day (last 30 days)
+  const thirtyDaysAgo = new Date()
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
+  const dailyRevenue = await Order.aggregate([
+    {
+      $match: {
+        createdAt: { $gte: thirtyDaysAgo },
+        status: 'delivered'
+      }
+    },
+    {
+      $group: {
+        _id: {
+          year: { $year: '$createdAt' },
+          month: { $month: '$createdAt' },
+          day: { $dayOfMonth: '$createdAt' }
+        },
+        revenue: { $sum: '$totalPrice' },
+        orders: { $sum: 1 }
+      }
+    },
+    {
+      $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 }
+    }
+  ])
+
   res.json({
     success: true,
     data: {
@@ -305,9 +386,12 @@ export const getOrderStats = asyncHandler(async (req, res) => {
         shipped: shippedOrders,
         delivered: deliveredOrders,
         cancelled: cancelledOrders,
-        totalRevenue
+        totalRevenue,
+        todayRevenue,
+        todayOrdersCount
       },
-      monthlyRevenue
+      monthlyRevenue,
+      dailyRevenue
     }
   })
 })
@@ -388,6 +472,15 @@ export const cancelOrder = asyncHandler(async (req, res) => {
         product.inStock = true
       }
       await product.save()
+    }
+  }
+
+  // Restore promotion usage
+  if (order.promotion) {
+    const promotion = await Promotion.findById(order.promotion);
+    if (promotion) {
+      promotion.usedCount = Math.max(0, (promotion.usedCount || 0) - 1);
+      await promotion.save();
     }
   }
 

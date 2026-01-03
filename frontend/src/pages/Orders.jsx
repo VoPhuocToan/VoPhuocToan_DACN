@@ -31,7 +31,8 @@ const Orders = () => {
       const response = await fetch(`${apiUrl}/api/orders/myorders`, {
         headers: {
           'Authorization': `Bearer ${token}`
-        }
+        },
+        cache: 'no-store'
       })
 
       const data = await response.json()

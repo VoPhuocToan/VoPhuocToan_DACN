@@ -830,3 +830,67 @@
     font-size: 1.1em;
   }
 }
+
+/* Promotion Section */
+.promotion-section {
+  margin: 20px 0;
+}
+
+.promotion-input-group {
+  display: flex;
+  gap: 10px;
+}
+
+.promotion-input-group input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.btn-apply-promo,
+.btn-remove-promo {
+  padding: 0 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.3s;
+}
+
+.btn-apply-promo {
+  background: #2ecc71;
+  color: white;
+}
+
+.btn-apply-promo:hover {
+  background: #27ae60;
+}
+
+.btn-remove-promo {
+  background: #e74c3c;
+  color: white;
+}
+
+.btn-remove-promo:hover {
+  background: #c0392b;
+}
+
+.promotion-error {
+  color: #e74c3c;
+  font-size: 13px;
+  margin-top: 5px;
+}
+
+.promotion-success {
+  color: #2ecc71;
+  font-size: 13px;
+  margin-top: 5px;
+}
+
+.summary-row.discount {
+  color: #27ae60;
+  font-weight: 600;
+}
+

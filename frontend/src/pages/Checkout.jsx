@@ -28,6 +28,12 @@ const Checkout = () => {
 
   const [formErrors, setFormErrors] = useState({})
 
+  // Promotion state
+  const [promotionCode, setPromotionCode] = useState('')
+  const [discountAmount, setDiscountAmount] = useState(0)
+  const [appliedPromotion, setAppliedPromotion] = useState(null)
+  const [promotionError, setPromotionError] = useState('')
+
   // Address state
   const [provinces, setProvinces] = useState([])
   const [districts, setDistricts] = useState([])
@@ -218,6 +224,44 @@ const Checkout = () => {
 
 
 
+  const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+  const shippingPrice = totalPrice > 500000 ? 0 : 30000
+  const finalTotal = totalPrice + shippingPrice - discountAmount
+
+  const handleApplyPromotion = async () => {
+    if (!promotionCode.trim()) return
+
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+      const response = await fetch(`${apiUrl}/api/promotions/validate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          code: promotionCode,
+          orderValue: totalPrice
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setAppliedPromotion(data.data.promotion)
+        setDiscountAmount(data.data.discountAmount)
+        setPromotionError('')
+        // alert('Áp dụng mã giảm giá thành công!')
+      } else {
+        setAppliedPromotion(null)
+        setDiscountAmount(0)
+        setPromotionError(data.message)
+      }
+    } catch (error) {
+      console.error('Error validating promotion:', error)
+      setPromotionError('Lỗi khi kiểm tra mã giảm giá')
+    }
+  }
+
   const handlePlaceOrder = async (e) => {
     e.preventDefault()
 
@@ -252,7 +296,7 @@ const Checkout = () => {
       // Calculate prices
       const itemsPrice = orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
       const shippingPrice = itemsPrice > 500000 ? 0 : 30000
-      const totalPrice = itemsPrice + shippingPrice
+      const totalPrice = itemsPrice + shippingPrice - discountAmount
 
       const orderData = {
         orderItems,
@@ -268,7 +312,9 @@ const Checkout = () => {
         itemsPrice,
         shippingPrice,
         totalPrice,
-        notes: formData.notes
+        notes: formData.notes,
+        promotionCode: appliedPromotion ? appliedPromotion.code : null,
+        discountAmount: discountAmount
       }
 
       const response = await fetch(`${apiUrl}/api/orders`, {
@@ -337,10 +383,6 @@ const Checkout = () => {
       setIsLoading(false)
     }
   }
-
-  const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
-  const shippingPrice = totalPrice > 500000 ? 0 : 30000
-  const finalTotal = totalPrice + shippingPrice
 
   if (orderPlaced) {
     return (
@@ -593,7 +635,28 @@ const Checkout = () => {
               )}
             </div>
 
-            <div className='summary-divider'></div>
+            <div className='promotion-section'>
+              <div className='promotion-input-group'>
+                <input
+                  type='text'
+                  placeholder='Nhập mã giảm giá'
+                  value={promotionCode}
+                  onChange={(e) => setPromotionCode(e.target.value)}
+                  disabled={!!appliedPromotion}
+                />
+                {appliedPromotion ? (
+                  <button type='button' className='btn-remove-promo' onClick={() => {
+                    setAppliedPromotion(null)
+                    setDiscountAmount(0)
+                    setPromotionCode('')
+                  }}>Xóa</button>
+                ) : (
+                  <button type='button' className='btn-apply-promo' onClick={handleApplyPromotion}>Áp dụng</button>
+                )}
+              </div>
+              {promotionError && <p className='promotion-error'>{promotionError}</p>}
+              {appliedPromotion && <p className='promotion-success'>Đã áp dụng mã: {appliedPromotion.code}</p>}
+            </div>
 
             <div className='summary-row'>
               <span>Tổng tiền hàng:</span>
@@ -604,6 +667,13 @@ const Checkout = () => {
               <span>Phí vận chuyển:</span>
               <span>{shippingPrice === 0 ? 'Miễn phí' : `${shippingPrice.toLocaleString('vi-VN')} ₫`}</span>
             </div>
+
+            {discountAmount > 0 && (
+              <div className='summary-row discount'>
+                <span>Giảm giá:</span>
+                <span>-{discountAmount.toLocaleString('vi-VN')} ₫</span>
+              </div>
+            )}
 
             <div className='summary-row total'>
               <span>Tổng cộng:</span>

@@ -62,11 +62,22 @@ const orderSchema = new mongoose.Schema({
     enum: ['cod', 'bank', 'momo', 'vnpay', 'payos'],
     default: 'cod'
   },
+  promotion: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Promotion'
+  },
+  discountAmount: {
+    type: Number,
+    default: 0
+  },
   paymentResult: {
     id: String,
     status: String,
     update_time: String,
-    email_address: String
+    email_address: String,
+    orderCode: Number,
+    checkoutUrl: String,
+    transactionId: String
   },
   itemsPrice: {
     type: Number,

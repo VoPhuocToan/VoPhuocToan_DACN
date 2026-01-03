@@ -1,6 +1,18 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import { useStore } from '../context/StoreContext'
 import { useNavigate } from 'react-router-dom'
+import {
+  ComposedChart,
+  Line,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  Area
+} from 'recharts'
 import '../styles/Dashboard.css'
 
 const Dashboard = () => {
@@ -10,9 +22,14 @@ const Dashboard = () => {
     totalProducts: 0,
     totalCategories: 0,
     totalOrders: 0,
-    totalRevenue: 0
+    totalRevenue: 0,
+    todayRevenue: 0,
+    todayOrdersCount: 0,
+    dailyRevenue: [],
+    monthlyRevenue: []
   })
   const [loading, setLoading] = useState(true)
+  const [chartPeriod, setChartPeriod] = useState('7days') // 7days, 30days, 90days
 
   useEffect(() => {
     if (token) {
@@ -43,9 +60,13 @@ const Dashboard = () => {
         totalCategories: categoriesData.data?.length || 0,
         totalOrders: orderStats.total || 0,
         totalRevenue: orderStats.totalRevenue || 0,
+        todayRevenue: orderStats.todayRevenue || 0,
+        todayOrdersCount: orderStats.todayOrdersCount || 0,
         pendingOrders: orderStats.pending || 0,
         processingOrders: orderStats.processing || 0,
-        deliveredOrders: orderStats.delivered || 0
+        deliveredOrders: orderStats.delivered || 0,
+        dailyRevenue: ordersStatsData.data?.dailyRevenue || [],
+        monthlyRevenue: ordersStatsData.data?.monthlyRevenue || []
       })
     } catch (error) {
       console.error('Error fetching stats:', error)
@@ -53,6 +74,41 @@ const Dashboard = () => {
       setLoading(false)
     }
   }
+
+  const chartData = useMemo(() => {
+    if (chartPeriod === '90days') {
+      // Use monthly data for 90 days (approx 3 months)
+      return stats.monthlyRevenue.slice(-3).map(item => ({
+        name: `T${item._id.month}/${item._id.year}`,
+        revenue: item.revenue,
+        orders: item.orders
+      }))
+    } else {
+      // Use daily data
+      let data = [...stats.dailyRevenue]
+      
+      // Fill in missing days if needed, but for now let's just use what we have
+      // Sort by date just in case
+      data.sort((a, b) => {
+        const dateA = new Date(a._id.year, a._id.month - 1, a._id.day)
+        const dateB = new Date(b._id.year, b._id.month - 1, b._id.day)
+        return dateA - dateB
+      })
+
+      if (chartPeriod === '7days') {
+        data = data.slice(-7)
+      } else {
+        // 30 days
+        data = data.slice(-30)
+      }
+
+      return data.map(item => ({
+        name: `${item._id.day}/${item._id.month}`,
+        revenue: item.revenue,
+        orders: item.orders
+      }))
+    }
+  }, [stats.dailyRevenue, stats.monthlyRevenue, chartPeriod])
 
   return (
     <div className='dashboard'>
@@ -153,8 +209,8 @@ const Dashboard = () => {
                 </div>
                 <div className='kpi-content'>
                   <h3 className='kpi-label'>Doanh thu hôm nay</h3>
-                  <p className='kpi-value'>0 đ</p>
-                  <p className='kpi-subtitle'>Chưa có đơn hôm nay</p>
+                  <p className='kpi-value'>{stats.todayRevenue?.toLocaleString('vi-VN')} đ</p>
+                  <p className='kpi-subtitle'>{stats.todayOrdersCount > 0 ? `${stats.todayOrdersCount} đơn hôm nay` : 'Chưa có đơn hôm nay'}</p>
                 </div>
               </div>
             </div>
@@ -171,19 +227,95 @@ const Dashboard = () => {
                     <h3>Xu hướng doanh thu & đơn hàng</h3>
                   </div>
                   <div className='chart-filters'>
-                    <button className='filter-btn active'>7 ngày</button>
-                    <button className='filter-btn'>30 ngày</button>
-                    <button className='filter-btn'>90 ngày</button>
+                    <button 
+                      className={`filter-btn ${chartPeriod === '7days' ? 'active' : ''}`}
+                      onClick={() => setChartPeriod('7days')}
+                    >
+                      7 ngày
+                    </button>
+                    <button 
+                      className={`filter-btn ${chartPeriod === '30days' ? 'active' : ''}`}
+                      onClick={() => setChartPeriod('30days')}
+                    >
+                      30 ngày
+                    </button>
+                    <button 
+                      className={`filter-btn ${chartPeriod === '90days' ? 'active' : ''}`}
+                      onClick={() => setChartPeriod('90days')}
+                    >
+                      90 ngày
+                    </button>
                   </div>
                 </div>
                 <div className='chart-body'>
-                  <div className='chart-placeholder'>
-                    <div className='chart-empty-state'>
-                      <span className='empty-icon'>📈</span>
-                      <p>Biểu đồ xu hướng sẽ hiển thị ở đây</p>
-                      <small>Dữ liệu được cập nhật theo thời gian thực</small>
+                  {chartData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ComposedChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="#8884d8" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                        <XAxis 
+                          dataKey="name" 
+                          axisLine={false} 
+                          tickLine={false} 
+                          tick={{ fill: '#666', fontSize: 12 }}
+                          dy={10}
+                        />
+                        <YAxis 
+                          yAxisId="left" 
+                          orientation="left" 
+                          axisLine={false} 
+                          tickLine={false}
+                          tick={{ fill: '#666', fontSize: 12 }}
+                          tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`}
+                        />
+                        <YAxis 
+                          yAxisId="right" 
+                          orientation="right" 
+                          axisLine={false} 
+                          tickLine={false}
+                          tick={{ fill: '#666', fontSize: 12 }}
+                        />
+                        <Tooltip 
+                          contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                          formatter={(value, name) => [
+                            name === 'revenue' ? value.toLocaleString('vi-VN') + ' đ' : value, 
+                            name === 'revenue' ? 'Doanh thu' : 'Đơn hàng'
+                          ]}
+                        />
+                        <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                        <Bar 
+                          yAxisId="left" 
+                          dataKey="revenue" 
+                          name="Doanh thu" 
+                          fill="url(#colorRevenue)" 
+                          radius={[4, 4, 0, 0]}
+                          barSize={30}
+                        />
+                        <Line 
+                          yAxisId="right" 
+                          type="monotone" 
+                          dataKey="orders" 
+                          name="Đơn hàng" 
+                          stroke="#ff7300" 
+                          strokeWidth={3}
+                          dot={{ r: 4, fill: '#ff7300', strokeWidth: 2, stroke: '#fff' }}
+                          activeDot={{ r: 6 }}
+                        />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className='chart-placeholder'>
+                      <div className='chart-empty-state'>
+                        <span className='empty-icon'>📈</span>
+                        <p>Chưa có dữ liệu để hiển thị</p>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
 
