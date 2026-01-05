@@ -563,6 +563,42 @@
   line-height: 1.6;
 }
 
+.admin-reply {
+  margin-top: 1rem;
+  background-color: #f0f9ff;
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 4px solid var(--color-primary);
+}
+
+.admin-reply-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.admin-badge {
+  background-color: var(--color-primary);
+  color: white;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.reply-date {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.reply-content {
+  margin: 0;
+  color: #333;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
 .no-reviews {
   text-align: center;
   color: #6b7280;

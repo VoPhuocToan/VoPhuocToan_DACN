@@ -604,6 +604,10 @@ export const getRevenueStats = asyncHandler(async (req, res) => {
   const paymentMethods = {}
   orders.forEach(order => {
     const method = order.paymentMethod || 'cod'
+    
+    // Only include COD and PayOS as requested
+    if (method !== 'cod' && method !== 'payos') return
+
     if (!paymentMethods[method]) {
       paymentMethods[method] = { name: getPaymentMethodName(method), value: 0 }
     }
@@ -637,6 +641,77 @@ export const getRevenueStats = asyncHandler(async (req, res) => {
   const totalOrders = orders.length
   const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0
 
+  // Calculate growth
+  let previousPeriodRevenue = 0
+  let previousDateFilter = {}
+  
+  switch (filter) {
+    case 'day':
+      // Previous 30 days
+      previousDateFilter = {
+        createdAt: {
+          $gte: new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000),
+          $lt: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+        }
+      }
+      break
+    case 'week':
+      // Previous 12 weeks
+      previousDateFilter = {
+        createdAt: {
+          $gte: new Date(now.getTime() - 168 * 24 * 60 * 60 * 1000),
+          $lt: new Date(now.getTime() - 84 * 24 * 60 * 60 * 1000)
+        }
+      }
+      break
+    case 'month':
+      // Previous 12 months
+      previousDateFilter = {
+        createdAt: {
+          $gte: new Date(now.getFullYear() - 2, now.getMonth(), 1),
+          $lt: new Date(now.getFullYear() - 1, now.getMonth(), 1)
+        }
+      }
+      break
+    case 'year':
+      // Previous 5 years
+      previousDateFilter = {
+        createdAt: {
+          $gte: new Date(now.getFullYear() - 10, 0, 1),
+          $lt: new Date(now.getFullYear() - 5, 0, 1)
+        }
+      }
+      break
+    case 'custom':
+      if (startDate && endDate) {
+        const start = new Date(startDate)
+        const end = new Date(endDate)
+        const duration = end.getTime() - start.getTime()
+        previousDateFilter = {
+          createdAt: {
+            $gte: new Date(start.getTime() - duration),
+            $lt: start
+          }
+        }
+      }
+      break
+  }
+
+  if (Object.keys(previousDateFilter).length > 0) {
+    const previousOrders = await Order.find({
+      ...previousDateFilter,
+      status: 'delivered'
+    })
+    previousPeriodRevenue = previousOrders.reduce((sum, order) => sum + order.totalPrice, 0)
+  }
+
+  let growth = 0
+  if (previousPeriodRevenue > 0) {
+    growth = ((totalRevenue - previousPeriodRevenue) / previousPeriodRevenue) * 100
+  } else if (totalRevenue > 0) {
+    growth = 100
+  }
+
   res.json({
     success: true,
     data: {
@@ -645,7 +720,7 @@ export const getRevenueStats = asyncHandler(async (req, res) => {
         totalOrders,
         averageOrderValue,
         period: getPeriodLabel(filter, startDate, endDate),
-        growth: 0 // Can be calculated by comparing with previous period
+        growth: Math.round(growth * 10) / 10
       },
       chartData: chartDataArray,
       paymentMethods: Object.values(paymentMethods),
@@ -667,9 +742,7 @@ function getWeekNumber(date) {
 function getPaymentMethodName(method) {
   const names = {
     'cod': 'COD',
-    'bank': 'Chuyển khoản',
-    'momo': 'MoMo',
-    'vnpay': 'VNPay'
+    'payos': 'PayOS'
   }
   return names[method] || method
 }

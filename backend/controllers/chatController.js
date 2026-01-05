@@ -39,24 +39,32 @@ export const chatWithAI = asyncHandler(async (req, res) => {
     const systemPrompt = `
 Bạn là AI trợ lý tư vấn THỰC PHẨM CHỨC NĂNG cho nhà thuốc HealthyCare.
 
-NHIỆM VỤ:
-- Tư vấn sản phẩm đúng nhu cầu sức khỏe
-- Khi người dùng có ý định MUA hoặc TÌM SẢN PHẨM → phân tích nhu cầu
+GIỚI HẠN BẮT BUỘC:
+1. CHỈ ĐƯỢC:
+- Tư vấn thực phẩm chức năng
+- Giải thích công dụng, cách dùng, liều lượng
+- Gợi ý sản phẩm có trong CSDL (thông qua việc trả về JSON để hệ thống tìm kiếm)
+- Tìm kiếm, so sánh sản phẩm theo giá, công dụng, mức bán chạy
+2. KHÔNG ĐƯỢC:
+- Tư vấn bệnh, chẩn đoán y khoa (thay thế bác sĩ)
+- Nói chuyện ngoài lề (chính trị, game, lập trình, đời sống...)
+- Đưa ra sản phẩm không có trong CSDL (không được bịa tên sản phẩm)
+- Nếu người dùng hỏi sai chủ đề -> Từ chối lịch sự và hướng lại đúng phạm vi.
 
-QUY TẮC QUAN TRỌNG:
-- Nếu người dùng hỏi "mua gì", "dùng gì", "có thuốc gì", "tư vấn cho tôi" -> BẮT BUỘC TRẢ VỀ JSON.
-- KHÔNG trả lời bằng lời dẫn khi trả về JSON. Chỉ trả về JSON thuần túy.
+PHÂN LOẠI INTENT (Ý ĐỊNH):
+- "suggest_product": Tìm sản phẩm, lọc sản phẩm (giá, bán chạy, danh mục), so sánh sản phẩm.
+- "advice": Tư vấn sử dụng (uống lúc nào, ai không nên dùng...), giải thích công dụng.
+- "refuse": Câu hỏi ngoài phạm vi (bệnh lý, chính trị, game...).
 
-CÁCH TRẢ LỜI:
-1. Nếu là câu hỏi thông tin chung (không hỏi mua) → trả lời bình thường (text)
-2. Nếu là câu hỏi mua / gợi ý sản phẩm → CHỈ trả về JSON theo mẫu:
-
+CẤU TRÚC JSON TRẢ VỀ (BẮT BUỘC CHO MỌI CÂU TRẢ LỜI):
 {
-  "intent": "suggest_product",
-  "muc_dich": "Mục đích sử dụng (ngắn gọn)",
-  "doi_tuong": "Đối tượng sử dụng",
-  "van_de_suc_khoe": "Từ khóa chính (ví dụ: Xương khớp, Gan, Mắt, Não, Tim mạch, Vitamin, Đề kháng, Da, Tóc...)",
-  "tu_khoa": ["keyword1", "keyword2"]
+  "intent": "suggest_product" | "advice" | "refuse",
+  "message": "Nội dung trả lời (Tuân thủ công thức: Xác nhận nhu cầu -> Gợi ý -> Thông tin -> Hành động)",
+  "search_params": {
+    "keywords": ["từ khóa 1", "từ khóa 2", "từ khóa 3"],
+    "category": "Tên danh mục nếu có (Ví dụ: Vitamin & Khoáng chất, Hỗ trợ tiêu hóa, Sức khỏe tim mạch, Hỗ trợ xương khớp, Hỗ trợ làm đẹp)",
+    "sort": "price_asc" | "price_desc" | "best_selling" | null
+  }
 }
 
 VÍ DỤ:
@@ -64,17 +72,38 @@ User: "đau lưng mua gì"
 AI:
 {
   "intent": "suggest_product",
-  "muc_dich": "Giảm đau lưng",
-  "doi_tuong": "Người lớn",
-  "van_de_suc_khoe": "Xương khớp",
-  "tu_khoa": ["đau lưng", "xương khớp", "glucosamine"]
+  "message": "Chào bạn, với tình trạng đau lưng, bạn có thể tham khảo các sản phẩm hỗ trợ xương khớp. Dưới đây là một số gợi ý phù hợp:",
+  "search_params": {
+    "keywords": ["xương khớp", "đau lưng", "glucosamine"],
+    "category": "Hỗ trợ xương khớp",
+    "sort": null
+  }
+}
+
+User: "tìm vitamin C giá rẻ nhất"
+AI:
+{
+  "intent": "suggest_product",
+  "message": "Dưới đây là các sản phẩm Vitamin C có giá tốt nhất tại HealthyCare:",
+  "search_params": {
+    "keywords": ["vitamin C"],
+    "category": "Vitamin & Khoáng chất",
+    "sort": "price_asc"
+  }
+}
+
+User: "bệnh ung thư có chữa được không"
+AI:
+{
+  "intent": "refuse",
+  "message": "Xin lỗi, tôi chỉ là trợ lý ảo tư vấn về thực phẩm chức năng và không thể đưa ra lời khuyên về các bệnh lý nghiêm trọng như ung thư. Bạn vui lòng tham khảo ý kiến bác sĩ chuyên khoa để được chẩn đoán và điều trị chính xác.",
+  "search_params": null
 }
 
 LƯU Ý:
-- "van_de_suc_khoe" nên dùng các từ khóa chung như: Xương khớp, Gan, Mắt, Não, Tim mạch, Vitamin, Đề kháng, Da, Tóc... để dễ tìm kiếm trong cơ sở dữ liệu.
-- "tu_khoa": Liệt kê 3-5 từ khóa quan trọng nhất để tìm kiếm sản phẩm.
-- KHÔNG tự bịa tên sản phẩm
-- KHÔNG tư vấn ngoài lĩnh vực thực phẩm chức năng
+- Luôn trả về JSON hợp lệ.
+- "keywords": Chọn 3-5 từ khóa sát nhất với nhu cầu để tìm trong database.
+- "message": Ngắn gọn, súc tích, lịch sự.
 `
 
     const completion = await openai.chat.completions.create({
@@ -94,12 +123,12 @@ LƯU Ý:
 
     let aiResponse = null
     let suggestProducts = []
-    let displayContent = assistantMessage
+    let displayContent = ''
 
     // 1. Try to parse the whole message as JSON
     try {
       aiResponse = JSON.parse(assistantMessage)
-      displayContent = 'Tôi đã tìm thấy một số sản phẩm phù hợp với nhu cầu của bạn:'
+      displayContent = aiResponse.message || 'Tôi đã tìm thấy một số sản phẩm phù hợp:'
     } catch (e) {
       // 2. If failed, try to extract JSON from text
       const jsonMatch = assistantMessage.match(/\{[\s\S]*\}/)
@@ -107,58 +136,69 @@ LƯU Ý:
         try {
           const jsonStr = jsonMatch[0]
           aiResponse = JSON.parse(jsonStr)
-          
-          // Remove the JSON part from the message to show only text
-          displayContent = assistantMessage.replace(jsonStr, '').trim()
-          if (!displayContent) {
-            displayContent = 'Tôi đã tìm thấy một số sản phẩm phù hợp với nhu cầu của bạn:'
-          }
+          displayContent = aiResponse.message || 'Tôi đã tìm thấy một số sản phẩm phù hợp:'
         } catch (parseError) {
           console.log('❌ Failed to parse extracted JSON:', parseError.message)
+          displayContent = assistantMessage // Fallback to raw text
         }
+      } else {
+        displayContent = assistantMessage // No JSON found
       }
     }
 
-    if (aiResponse?.intent === 'suggest_product') {
-      const { muc_dich, doi_tuong, van_de_suc_khoe, tu_khoa } = aiResponse
+    if (aiResponse && aiResponse.intent === 'suggest_product' && aiResponse.search_params) {
+      const { keywords, category, sort } = aiResponse.search_params
 
       console.log('🔍 AI Intent: suggest_product')
-      console.log('🔍 AI Data:', aiResponse)
+      console.log('🔍 Search Params:', aiResponse.search_params)
 
       // Build query conditions
+      const query = { isActive: true }
       const orConditions = []
       
-      // Helper to add regex conditions for multiple fields
-      const addCondition = (term, fields) => {
-        if (term) {
-          fields.forEach(field => {
-            orConditions.push({ [field]: { $regex: term, $options: 'i' } })
-          })
-        }
-      }
-
-      addCondition(muc_dich, ['category', 'name', 'description'])
-      addCondition(doi_tuong, ['description', 'usage', 'name'])
-      addCondition(van_de_suc_khoe, ['description', 'usage', 'ingredients', 'name'])
-
-      if (tu_khoa && Array.isArray(tu_khoa)) {
-        tu_khoa.forEach(kw => {
-           addCondition(kw, ['name', 'description', 'category', 'usage', 'ingredients'])
+      if (keywords && Array.isArray(keywords) && keywords.length > 0) {
+        keywords.forEach(kw => {
+           orConditions.push({ name: { $regex: kw, $options: 'i' } })
+           orConditions.push({ description: { $regex: kw, $options: 'i' } })
+           orConditions.push({ category: { $regex: kw, $options: 'i' } })
+           orConditions.push({ usage: { $regex: kw, $options: 'i' } })
         })
       }
 
-      console.log('🔍 Query Conditions:', JSON.stringify(orConditions, null, 2))
-
-      // Fallback if no conditions match (though regex usually matches something or empty string matches all)
-      // If all fields are empty, we might return random products or none.
-      // But let's stick to the logic.
-      
-      if (orConditions.length > 0) {
-          suggestProducts = await Product.find({
-            $or: orConditions
-          }).limit(5)
-          console.log('🔍 Found products:', suggestProducts.length)
+      if (category) {
+        // If category is specific, prioritize it or filter by it
+        // Here we add it to OR conditions to be flexible, or AND if strict.
+        // Let's use AND if provided to narrow down, but AI might guess wrong category name.
+        // Safer to use regex on category field in OR or separate AND.
+        // Let's try to be smart: if category matches one of our known categories, use it strictly?
+        // For now, let's add it to the OR conditions with high priority or just regex match.
+        orConditions.push({ category: { $regex: category, $options: 'i' } })
       }
+
+      if (orConditions.length > 0) {
+        query.$or = orConditions
+      }
+
+      // Sort options
+      let sortOption = {}
+      if (sort === 'price_asc') sortOption = { price: 1 }
+      else if (sort === 'price_desc') sortOption = { price: -1 }
+      else if (sort === 'best_selling') sortOption = { sold: -1 } // Assuming 'sold' field exists, or 'views'
+      else sortOption = { views: -1 } // Default to popular
+
+      suggestProducts = await Product.find(query)
+        .sort(sortOption)
+        .limit(5)
+      
+      console.log('🔍 Found products:', suggestProducts.length)
+
+      if (suggestProducts.length === 0) {
+        displayContent += '\n\n(Hiện tại HealthyCare chưa có sản phẩm nào hoàn toàn phù hợp với các tiêu chí tìm kiếm này. Bạn có thể thử từ khóa khác nhé.)'
+      }
+    } else if (aiResponse && aiResponse.intent === 'refuse') {
+       // Just return the message
+    } else if (aiResponse && aiResponse.intent === 'advice') {
+       // Just return the message
     }
 
     res.json({

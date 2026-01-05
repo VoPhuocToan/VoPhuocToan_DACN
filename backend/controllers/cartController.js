@@ -1,6 +1,51 @@
 import asyncHandler from '../utils/asyncHandler.js'
 import Cart from '../models/Cart.js'
 import Product from '../models/Product.js'
+import Promotion from '../models/Promotion.js'
+
+// Helper to calculate product price with flash sale
+const calculateProductPrice = async (product) => {
+  let finalPrice = product.price
+  try {
+    const now = new Date()
+    const activeFlashSales = await Promotion.find({
+      isActive: true,
+      startDate: { $lte: now },
+      endDate: { $gte: now },
+      $or: [
+        { code: { $regex: 'FLASH', $options: 'i' } },
+        { description: { $regex: 'flash sale', $options: 'i' } }
+      ]
+    })
+
+    for (const sale of activeFlashSales) {
+      let isApplicable = false
+      const hasApplicableProducts = sale.applicableProducts && sale.applicableProducts.length > 0
+      const hasApplicableCategories = sale.applicableCategories && sale.applicableCategories.length > 0
+      
+      if (hasApplicableProducts || hasApplicableCategories) {
+         const inProducts = hasApplicableProducts && sale.applicableProducts.includes(product._id)
+         const inCategories = hasApplicableCategories && sale.applicableCategories.includes(product.category)
+         isApplicable = inProducts || inCategories
+      } else {
+         // Fallback logic: check if product is in top 6 (sorted by createdAt asc to match frontend)
+         const top6 = await Product.find({ isActive: true }).sort({ createdAt: 1 }).limit(6)
+         const top6Ids = top6.map(p => p._id.toString())
+         if (top6Ids.includes(product._id.toString())) {
+            isApplicable = true
+         }
+      }
+      
+      if (isApplicable) {
+         finalPrice = Math.round(product.price * (100 - sale.discountValue) / 100 / 1000) * 1000
+         break 
+      }
+    }
+  } catch (err) {
+    console.error('Error calculating flash sale price:', err)
+  }
+  return finalPrice
+}
 
 // @desc    Get cart by user ID
 // @route   GET /api/cart/:userId
@@ -26,6 +71,22 @@ export const getCart = asyncHandler(async (req, res) => {
     
     if (validItems.length < cart.items.length) {
       cart.items = validItems
+      await cart.save()
+    }
+
+    // Update prices based on current flash sales
+    let priceChanged = false
+    for (const item of cart.items) {
+      if (item.productId) {
+        const currentPrice = await calculateProductPrice(item.productId)
+        if (item.price !== currentPrice) {
+          item.price = currentPrice
+          priceChanged = true
+        }
+      }
+    }
+
+    if (priceChanged) {
       await cart.save()
     }
   }
@@ -111,14 +172,18 @@ export const addToCart = asyncHandler(async (req, res) => {
     })
   }
 
+  // Calculate final price (check for Flash Sale)
+  let finalPrice = product ? await calculateProductPrice(product) : productData.price
+
   if (existingItem) {
     existingItem.quantity = newQuantity
+    existingItem.price = finalPrice
   } else {
     cart.items.push({
       productId: product ? product._id : null,
       clientProductId: clientId,
       name: product ? product.name : productData.name,
-      price: product ? product.price : productData.price,
+      price: finalPrice,
       image: product ? (product.image || (product.images && product.images[0])) : productData.image,
       quantity: quantityToAdd
     })

@@ -635,28 +635,7 @@ const Checkout = () => {
               )}
             </div>
 
-            <div className='promotion-section'>
-              <div className='promotion-input-group'>
-                <input
-                  type='text'
-                  placeholder='Nhập mã giảm giá'
-                  value={promotionCode}
-                  onChange={(e) => setPromotionCode(e.target.value)}
-                  disabled={!!appliedPromotion}
-                />
-                {appliedPromotion ? (
-                  <button type='button' className='btn-remove-promo' onClick={() => {
-                    setAppliedPromotion(null)
-                    setDiscountAmount(0)
-                    setPromotionCode('')
-                  }}>Xóa</button>
-                ) : (
-                  <button type='button' className='btn-apply-promo' onClick={handleApplyPromotion}>Áp dụng</button>
-                )}
-              </div>
-              {promotionError && <p className='promotion-error'>{promotionError}</p>}
-              {appliedPromotion && <p className='promotion-success'>Đã áp dụng mã: {appliedPromotion.code}</p>}
-            </div>
+
 
             <div className='summary-row'>
               <span>Tổng tiền hàng:</span>
@@ -668,12 +647,7 @@ const Checkout = () => {
               <span>{shippingPrice === 0 ? 'Miễn phí' : `${shippingPrice.toLocaleString('vi-VN')} ₫`}</span>
             </div>
 
-            {discountAmount > 0 && (
-              <div className='summary-row discount'>
-                <span>Giảm giá:</span>
-                <span>-{discountAmount.toLocaleString('vi-VN')} ₫</span>
-              </div>
-            )}
+
 
             <div className='summary-row total'>
               <span>Tổng cộng:</span>

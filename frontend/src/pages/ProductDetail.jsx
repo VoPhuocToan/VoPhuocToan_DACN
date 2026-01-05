@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import './ProductDetail.css'
+import './ProductDetail_FlashSale.css'
 
 // Import all images from assets folder
 const images = import.meta.glob('../assets/*.{jpg,jpeg,png,gif,webp}', { eager: true, import: 'default' })
@@ -46,6 +47,7 @@ const ProductDetail = () => {
   const [isFavorite, setIsFavorite] = useState(false)
   const [reviews, setReviews] = useState([])
   const [reviewStats, setReviewStats] = useState({ average: 0, count: 0 })
+  const [flashSaleInfo, setFlashSaleInfo] = useState(null)
   const authenticatedUserId = user ? (user._id || user.id || user.userId || user?.data?._id || user?.data?.id || null) : null
 
   // Fetch all products from API
@@ -98,6 +100,83 @@ const ProductDetail = () => {
     }
     fetchProducts()
   }, [id])
+
+  // Check for Flash Sale
+  useEffect(() => {
+    const checkFlashSale = async () => {
+      if (!product) return
+
+      try {
+        const res = await fetch(`${apiUrl}/api/promotions?pageSize=100`)
+        const data = await res.json()
+
+        if (data.success) {
+          const now = new Date()
+          // Find active flash sale that applies to this product
+          const activeFlashSale = data.data.find(p => {
+            const isFlash = p.code.toUpperCase().includes('FLASH') || p.description.toLowerCase().includes('flash sale')
+            const isActive = p.isActive && new Date(p.startDate) <= now && new Date(p.endDate) >= now
+            
+            if (!isFlash || !isActive) return false
+
+            // Check applicability
+            const hasApplicableProducts = p.applicableProducts && p.applicableProducts.length > 0
+            const hasApplicableCategories = p.applicableCategories && p.applicableCategories.length > 0
+
+            if (!hasApplicableProducts && !hasApplicableCategories) {
+               // If no specific restrictions, check if it's in the default list (fallback)
+               return true
+            }
+
+            const inProducts = hasApplicableProducts && p.applicableProducts.includes(product._id || product.id)
+            const inCategories = hasApplicableCategories && p.applicableCategories.includes(product.category)
+
+            return inProducts || inCategories
+          })
+
+          if (activeFlashSale) {
+             let isApplicable = false;
+             const hasApplicableProducts = activeFlashSale.applicableProducts && activeFlashSale.applicableProducts.length > 0
+             const hasApplicableCategories = activeFlashSale.applicableCategories && activeFlashSale.applicableCategories.length > 0
+
+             if (hasApplicableProducts || hasApplicableCategories) {
+                const inProducts = hasApplicableProducts && activeFlashSale.applicableProducts.includes(product._id || product.id)
+                const inCategories = hasApplicableCategories && activeFlashSale.applicableCategories.includes(product.category)
+                isApplicable = inProducts || inCategories
+             } else {
+                // Fallback logic matching FlashSale.jsx
+                const resProducts = await fetch(`${apiUrl}/api/products?pageSize=6`)
+                const dataProducts = await resProducts.json()
+                if (dataProducts.success) {
+                   const top6Ids = dataProducts.data.map(p => p._id)
+                   if (top6Ids.includes(product._id || product.id)) {
+                      isApplicable = true
+                   }
+                }
+             }
+
+             if (isApplicable) {
+                 const discountValue = activeFlashSale.discountValue
+                 const salePrice = Math.round(product.price * (100 - discountValue) / 100 / 1000) * 1000
+                 setFlashSaleInfo({
+                   discount: discountValue,
+                   salePrice: salePrice,
+                   endDate: activeFlashSale.endDate
+                 })
+             } else {
+                setFlashSaleInfo(null)
+             }
+          } else {
+            setFlashSaleInfo(null)
+          }
+        }
+      } catch (error) {
+        console.error('Error checking flash sale:', error)
+      }
+    }
+
+    checkFlashSale()
+  }, [product, apiUrl])
 
   // Check if product is in favorites
   useEffect(() => {
@@ -455,9 +534,22 @@ const ProductDetail = () => {
             </div>
 
             <div className='product-price-detail'>
-              <span className='current-price'>{product.price.toLocaleString('vi-VN')}đ</span>
-              {product.originalPrice && (
-                <span className='original-price'>{product.originalPrice.toLocaleString('vi-VN')}đ</span>
+              {flashSaleInfo ? (
+                <>
+                  <span className='current-price flash-sale-price'>{flashSaleInfo.salePrice.toLocaleString('vi-VN')}đ</span>
+                  <span className='original-price'>{product.price.toLocaleString('vi-VN')}đ</span>
+                  <div className='flash-sale-badge-detail'>
+                    <span className='flash-icon'>⚡</span>
+                    <span>-{flashSaleInfo.discount}%</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <span className='current-price'>{product.price.toLocaleString('vi-VN')}đ</span>
+                  {product.originalPrice && (
+                    <span className='original-price'>{product.originalPrice.toLocaleString('vi-VN')}đ</span>
+                  )}
+                </>
               )}
             </div>
 
@@ -561,6 +653,18 @@ const ProductDetail = () => {
                         </div>
                       </div>
                       {review.comment && <p className='review-comment'>{review.comment}</p>}
+                      
+                      {review.reply && review.reply.comment && (
+                        <div className='admin-reply'>
+                          <div className='admin-reply-header'>
+                            <span className='admin-badge'>Phản hồi từ Shop</span>
+                            <span className='reply-date'>
+                              {review.reply.createdAt ? new Date(review.reply.createdAt).toLocaleDateString('vi-VN') : ''}
+                            </span>
+                          </div>
+                          <p className='reply-content'>{review.reply.comment}</p>
+                        </div>
+                      )}
                     </div>
                   )
                 })

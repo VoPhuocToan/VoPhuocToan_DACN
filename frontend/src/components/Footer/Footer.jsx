@@ -96,15 +96,6 @@ const Footer = () => {
           <p className='copyright'>
             &copy; {currentYear} HealthyCare. Bảo lưu mọi quyền.
           </p>
-          <div className='payment-methods'>
-            <span className='payment-label'>Phương thức thanh toán:</span>
-            <div className='payment-icons'>
-              <span title='Visa'><i className='fi fi-brands-visa'></i></span>
-              <span title='Mastercard'><i className='fi fi-brands-mastercard'></i></span>
-              <span title='Momo'>💳</span>
-              <span title='Bank Transfer'>🏦</span>
-            </div>
-          </div>
         </div>
       </div>
 

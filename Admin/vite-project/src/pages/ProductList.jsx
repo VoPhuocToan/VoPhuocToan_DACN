@@ -30,7 +30,7 @@ const ProductList = () => {
   const [showDetailModal, setShowDetailModal] = useState(false)
 
   const getImageUrl = (imagePath) => {
-    if (!imagePath) return '/placeholder.jpg'
+    if (!imagePath) return '/placeholder.svg'
     if (imagePath.startsWith('http')) return imagePath
     
     // Remove /api from the end of API_URL if present
@@ -356,7 +356,7 @@ const ProductList = () => {
                             src={getImageUrl(prod.images?.[0] || prod.image)}
                             alt={prod.name}
                             className='product-thumb'
-                            onError={(e) => e.target.src = '/placeholder.jpg'}
+                            onError={(e) => e.target.src = '/placeholder.svg'}
                           />
                           <div className='product-info'>
                             <span className='product-name'>{prod.name}</span>
@@ -440,7 +440,7 @@ const ProductList = () => {
                     <img
                       src={getImageUrl(prod.images?.[0] || prod.image)}
                       alt={prod.name}
-                      onError={(e) => e.target.src = '/placeholder.jpg'}
+                      onError={(e) => e.target.src = '/placeholder.svg'}
                     />
                     <div className={`stock-badge ${stockStatus.class}`}>
                       {stockStatus.icon} {stockStatus.text}

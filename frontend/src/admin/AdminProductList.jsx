@@ -52,7 +52,7 @@ const AdminProductList = () => {
   }
 
   const getImageUrl = (imagePath) => {
-    if (!imagePath) return 'https://via.placeholder.com/50'
+    if (!imagePath) return '/placeholder.svg'
     if (imagePath.startsWith('http')) return imagePath
     
     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
@@ -91,7 +91,7 @@ const AdminProductList = () => {
           <tbody>
             {products.map(prod => (
               <tr key={prod._id}>
-                <td><img src={getImageUrl(prod.images?.[0] || prod.image)} alt={prod.name} className='thumb' /></td>
+                <td><img src={getImageUrl(prod.images?.[0] || prod.image)} alt={prod.name} className='thumb' onError={(e) => e.target.src = '/placeholder.svg'} /></td>
                 <td>{prod.name}</td>
                 <td>{prod.brand}</td>
                 <td>{prod.price.toLocaleString('vi-VN')} ₫</td>

@@ -234,11 +234,10 @@ const ProductCard = ({ product }) => {
           <h3 className='product-name'>{product.name}</h3>
           <div className='product-rating'>
             <span className='stars'>
-              {'★'.repeat(Math.floor(product.rating))}
-              {'☆'.repeat(5 - Math.floor(product.rating))}
+              {'★'.repeat(Math.min(5, Math.max(0, Math.floor(Number(product.rating || 0)))))}
+              {'☆'.repeat(5 - Math.min(5, Math.max(0, Math.floor(Number(product.rating || 0)))))}
             </span>
-            <span className='rating-value'>({product.rating})</span>
-            <span className='reviews'>{product.reviews} đánh giá</span>
+            <span className='rating-value'>({Number(product.rating || 0).toFixed(1)})</span>
           </div>
           <div className='product-price'>
             <span className='current-price'>{product.price.toLocaleString('vi-VN')}đ</span>

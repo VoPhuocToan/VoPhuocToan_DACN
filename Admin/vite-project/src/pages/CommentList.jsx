@@ -154,7 +154,7 @@ const CommentList = () => {
                 </div>
 
                 {/* Admin Reply Display */}
-                {comment.reply && (
+                {comment.reply && replyingTo !== comment._id && (
                   <div className="admin-reply">
                     <div className="reply-header">
                       <strong>Admin trả lời:</strong>
@@ -200,6 +200,18 @@ const CommentList = () => {
                     onClick={() => setReplyingTo(comment._id)}
                   >
                     💬 Trả lời
+                  </button>
+                )}
+                {comment.reply && !replyingTo && (
+                  <button 
+                    className="btn-reply"
+                    style={{ backgroundColor: '#f59e0b' }}
+                    onClick={() => {
+                      setReplyingTo(comment._id);
+                      setReplyText(comment.reply.comment);
+                    }}
+                  >
+                    ✏️ Sửa trả lời
                   </button>
                 )}
                 <button 
