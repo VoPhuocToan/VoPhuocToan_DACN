@@ -178,6 +178,10 @@ export const addToCart = asyncHandler(async (req, res) => {
   if (existingItem) {
     existingItem.quantity = newQuantity
     existingItem.price = finalPrice
+    // Update productId if it was null but now we have a valid product
+    if (product && !existingItem.productId) {
+      existingItem.productId = product._id
+    }
   } else {
     cart.items.push({
       productId: product ? product._id : null,

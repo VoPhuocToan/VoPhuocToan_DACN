@@ -51,8 +51,8 @@ const Chatbox = () => {
       const payload = {
         userId: userId,
         quantity: 1,
-        productId: product.id,
-        clientProductId: String(product.id),
+        productId: product.id || product._id,
+        clientProductId: String(product.id || product._id),
         productData: {
           name: product.name,
           price: product.price,

@@ -19,6 +19,9 @@ const UserList = () => {
     email: '',
     phone: '',
     address: '',
+    city: '',
+    district: '',
+    ward: '',
     role: 'user',
     isActive: true
   })
@@ -70,6 +73,9 @@ const UserList = () => {
       email: user.email,
       phone: user.phone || '',
       address: user.address || '',
+      city: user.city || '',
+      district: user.district || '',
+      ward: user.ward || '',
       role: user.role,
       isActive: user.isActive
     })
@@ -259,7 +265,11 @@ const UserList = () => {
                       <td>
                         <div className='contact-info'>
                           {user.phone && <span>📞 {user.phone}</span>}
-                          {user.address && <span className='address'>📍 {user.address}</span>}
+                          {(user.address || user.city) && (
+                            <span className='address'>
+                              📍 {[user.address, user.ward, user.district, user.city].filter(Boolean).join(', ')}
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td>
@@ -401,11 +411,39 @@ const UserList = () => {
               </div>
 
               <div className='form-group'>
-                <label>Địa chỉ</label>
+                <label>Số nhà, tên đường</label>
                 <textarea
                   value={editForm.address}
                   onChange={(e) => setEditForm({...editForm, address: e.target.value})}
                   rows={2}
+                />
+              </div>
+
+              <div className='form-row'>
+                <div className='form-group'>
+                  <label>Tỉnh / Thành phố</label>
+                  <input
+                    type='text'
+                    value={editForm.city}
+                    onChange={(e) => setEditForm({...editForm, city: e.target.value})}
+                  />
+                </div>
+                <div className='form-group'>
+                  <label>Quận / Huyện</label>
+                  <input
+                    type='text'
+                    value={editForm.district}
+                    onChange={(e) => setEditForm({...editForm, district: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className='form-group'>
+                <label>Phường / Xã</label>
+                <input
+                  type='text'
+                  value={editForm.ward}
+                  onChange={(e) => setEditForm({...editForm, ward: e.target.value})}
                 />
               </div>
 

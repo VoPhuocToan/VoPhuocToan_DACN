@@ -39,6 +39,22 @@ const Checkout = () => {
   const [districts, setDistricts] = useState([])
   const [wards, setWards] = useState([])
 
+  // Update form data when user data is available
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        fullName: user.name || '',
+        phone: user.phone || '',
+        email: user.email || '',
+        address: user.address || '',
+        city: user.city || '',
+        district: user.district || '',
+        ward: user.ward || ''
+      }))
+    }
+  }, [user])
+
   // Fetch provinces
   useEffect(() => {
     const fetchProvinces = async () => {

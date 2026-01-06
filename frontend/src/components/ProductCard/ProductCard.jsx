@@ -159,6 +159,7 @@ const ProductCard = ({ product }) => {
 
     const payload = {
       userId,
+      productId: product._id || product.id,
       quantity: 1,
       clientProductId: String(product.id),
       productData: {

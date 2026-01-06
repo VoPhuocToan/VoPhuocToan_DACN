@@ -58,9 +58,15 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
             </Link>
           </li>
           <li>
-            <Link to="/products" className={`nav-link ${isActive('/products') ? 'active' : ''}`} title={isCollapsed ? "Quản lý sản phẩm" : ""}>
+            <Link to="/products" className={`nav-link ${isActive('/products') && !isActive('/products/performance') ? 'active' : ''}`} title={isCollapsed ? "Quản lý sản phẩm" : ""}>
               <span className="nav-icon">📦</span>
               {!isCollapsed && <span>Quản lý sản phẩm</span>}
+            </Link>
+          </li>
+          <li>
+            <Link to="/products/performance" className={`nav-link ${isActive('/products/performance') ? 'active' : ''}`} title={isCollapsed ? "Sản phẩm bán chạy/chậm" : ""}>
+              <span className="nav-icon">📊</span>
+              {!isCollapsed && <span>Sản phẩm bán chạy/chậm</span>}
             </Link>
           </li>
           <li>

@@ -7,6 +7,7 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import ProductList from './pages/ProductList'
 import ProductForm from './pages/ProductForm'
+import ProductPerformance from './pages/ProductPerformance'
 import Categories from './pages/Categories'
 import ContactList from './pages/ContactList'
 import ContactDetail from './pages/ContactDetail'
@@ -28,6 +29,7 @@ function App() {
           <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route index element={<Dashboard />} />
             <Route path='products' element={<ProductList />} />
+            <Route path='products/performance' element={<ProductPerformance />} />
             <Route path='products/new' element={<ProductForm />} />
             <Route path='products/:id' element={<ProductForm />} />
             <Route path='categories' element={<Categories />} />

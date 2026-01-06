@@ -11,7 +11,8 @@ import {
   createProductReview,
   getAllReviews,
   replyToReview,
-  deleteReview
+  deleteReview,
+  getProductSalesStats
 } from '../controllers/productController.js'
 import { protect, authorize } from '../middleware/auth.js'
 import upload from '../middleware/upload.js'
@@ -20,6 +21,7 @@ const router = express.Router()
 
 // Admin routes for reviews
 router.get('/admin/reviews', protect, authorize('admin'), getAllReviews)
+router.get('/stats', protect, authorize('admin'), getProductSalesStats)
 router.put('/:id/reviews/:reviewId/reply', protect, authorize('admin'), replyToReview)
 router.delete('/:id/reviews/:reviewId', protect, authorize('admin'), deleteReview)
 

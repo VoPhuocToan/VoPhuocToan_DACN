@@ -476,3 +476,74 @@ export const deleteReview = asyncHandler(async (req, res) => {
   }
 })
 
+// @desc    Get product sales statistics
+// @route   GET /api/products/stats
+// @access  Private/Admin
+export const getProductSalesStats = asyncHandler(async (req, res) => {
+  // Aggregate accepted orders to count sold products
+  const productSales = await Order.aggregate([
+    {
+      $match: {
+        status: { $ne: 'cancelled' } // Only count non-cancelled orders
+      }
+    },
+    {
+      $unwind: '$orderItems'
+    },
+    {
+      $group: {
+        _id: '$orderItems.product',
+        totalSold: { $sum: '$orderItems.quantity' },
+        revenue: { $sum: { $multiply: ['$orderItems.price', '$orderItems.quantity'] } }
+      }
+    }
+  ])
+
+  // Create a map for quick lookup
+  const salesMap = {}
+  productSales.forEach(item => {
+    if (item._id) {
+      salesMap[item._id.toString()] = {
+        totalSold: item.totalSold,
+        revenue: item.revenue
+      }
+    }
+  })
+
+  // Get all active products
+  const products = await Product.find({ isActive: true })
+    .select('name brand price image category stock')
+    
+  // Combine data
+  const stats = products.map(product => {
+    const sales = salesMap[product._id.toString()] || { totalSold: 0, revenue: 0 }
+    return {
+      _id: product._id,
+      name: product.name,
+      brand: product.brand,
+      price: product.price,
+      image: product.image,
+      stock: product.stock,
+      category: product.category,
+      totalSold: sales.totalSold,
+      revenue: sales.revenue
+    }
+  })
+
+  // Sort based on query param (default: best-selling)
+  // type = 'slow' -> ascending order
+  // type = 'best' -> descending order
+  const { type } = req.query
+  if (type === 'slow') {
+    stats.sort((a, b) => a.totalSold - b.totalSold)
+  } else {
+    stats.sort((a, b) => b.totalSold - a.totalSold)
+  }
+
+  res.json({
+    success: true,
+    count: stats.length,
+    data: stats
+  })
+})
+
